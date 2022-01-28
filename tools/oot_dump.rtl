@@ -2055,7 +2055,7 @@ main(int argc, char **argv)
 	{
 		printf("DUMPING OOT-DEBUG...\n");
 		debugvariables();
-		name = "oot-debug.z64";
+		name = "baserom.z64";
 		VANILLA = "_vanilla-debug";
 		ACTOR_FOLDER = "_custom-debug";
 

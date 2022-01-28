@@ -29,6 +29,7 @@ gulp.task('install', function(){
     process.chdir("./assets");
     child_process.execSync("zzrtl.exe oot_dump.rtl");
     process.chdir(og);
+    return gulp.src('.');
 });
 
 gulp.task('_build', function () {

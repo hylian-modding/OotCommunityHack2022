@@ -10,7 +10,9 @@ To set up this repository you must place an Oot 1.0 rom in the "rom" folder.
 Install "nodejs" from https://nodejs.org/en/
 
 Run the following commands
+
 npm install -g yarn
+
 yarn
 
 ## Building

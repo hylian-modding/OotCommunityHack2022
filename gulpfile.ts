@@ -5,6 +5,9 @@ import AdmZip from 'adm-zip';
 import path from 'path';
 
 gulp.task('install', function(){
+    try{
+        fs.mkdirSync("./assets");
+    }catch(err){}
     console.log("Setting up zzrtl...");
     let og = process.cwd();
     fs.copyFileSync("./tools/zzrtl-r5b-4.exe", "./assets/zzrtl.exe");

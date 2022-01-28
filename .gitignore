@@ -1,0 +1,16 @@
+/node_modules
+baserom.z64
+tools/flipscfg.bin
+assets/cache
+tools/route.txt
+output/HMCommunity2022.bps
+assets/zzrtl-v1.0.5-win32.exe
+assets/flips.exe
+assets/oot_build.rtl
+assets/oot_dump.rtl
+assets/oot_names.tsv
+assets/baserom-dec.z64
+assets/build-yaz.z64
+assets/build.z64
+assets/HMCommunity2022.bps
+baserom-dec.z64

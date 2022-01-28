@@ -1,0 +1,4 @@
+zzrtl                   v0.01
+baserom                 "baserom-dec.z64"
+ZZPLAYAS_VROM_CODE      "'baserom-dec.z64'+0x00A87000"
+ZZPLAYAS_VROM_PLAYER    "'system/overlay/ovl_player_actor/ovl_player_actor.zovl'"

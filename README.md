@@ -5,7 +5,7 @@ The structure of this repository is subject to change.
 
 ## Setup
 
-To set up this repository you must place an Oot 1.0 rom in the "rom" folder.
+To set up this repository you must place an Oot Debug or 1.0 rom in the "rom" folder.
 
 Install "nodejs" from https://nodejs.org/en/
 

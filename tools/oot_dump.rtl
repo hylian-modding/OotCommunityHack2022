@@ -1,157 +1,213 @@
-/********************************************************
- * <z64.me> zzrtl script for extracting assets from OoT *
- ********************************************************/
+/*********************************************************************
+ * <z64.me> zzrtl script for extracting assets from OoT              * 
+ * audiobank(), audioseq(), audiotable(), restrictionflag(),         *
+ * message(), entrancecutscene(), and mapselect() by Jared Johnson   *
+ *********************************************************************/
+/*USE THE CONFIG.TSV FILE TO SELECT YOUR ROM*/
+/* global variables are initialized before they are set based on each rom, this makes it possible to set debug/1.0 in the config file*/
+	char *g_tsv;
+	int IS_DEBUG; int ACTOR_FOLDER; int VROM_CODE_SIZE; int N_ROGO; int N_ROGO_DMA; int N_ROGO_SIZE;int VANILLA;int TBL_OBJECT;int TBL_OBJECT_ENTRIES;
+	int TBL_ACTOR;int TBL_ACTOR_ENTRIES;int TBL_PARTICLE;int TBL_PARTICLE_ENTRIES;int TBL_SCENE;int TBL_SCENE_ENTRIES; int TBL_ROUTE;int TBL_ROUTE_ENTRIES;
+	int TBL_MAP_SELECT;int TBL_MAP_SELECT_ENTRIES;int TBL_AUDIOSAMPLE;int TBL_AUDIOTABLE_FILE;int TBL_AUDIOTABLE_FILE_SIZE;
+	int TBL_AUDIOBANK;int TBL_AUDIOBANK_FILE;int TBL_SEQUENCEINSTRUMENTSET;int TBL_SEQUENCE_FILE;int TBL_AUDIOSEQ;int TBL_ENTRANCECUTSCENE;
+	int TBL_ENTRANCECUTSCENE_ENTRIES;int TBL_MESSAGE; int TBL_MESSAGE_ENTRIES;int TBL_MESSAGE_DATA;int TBL_MESSAGE_DATA_SIZE; int TBL_RESTRICTIONFLAG;
+	int TBL_RESTRICTIONFLAG_ENTRIES;int TBL_DMA;int TBL_DMA_ENTRIES;int TBL_OVL_GAMESTATE;int TBL_OVL_PLAYER;int TBL_OVL_MAPMARK;int TITLECARD_W;
+	int TITLECARD_H;int VRAM_CODE;int VROM_CODE;int VROM_PLAYER; int DMA_ITEM_FIELD;int DMA_ITEM_LOCALIZED;int DMA_CODE;int DMA_OVL_TITLE;
+	int DMA_OVL_SELECT;int DMA_OVL_OPENING;int DMA_OVL_FILE_CHOOSE;int DMA_OVL_KALEIDO_SCOPE;int DMA_OVL_PLAYER_ACTOR;int DMA_OVL_MAP_MARK_DATA;
+	int DMA_ACTOR_FIRST;int DMA_ACTOR_LAST;int DMA_OBJECT_FIRST;int DMA_OBJECT_LAST;int DMA_G_PN_FIRST;int DMA_G_PN_LAST;int DMA_SKYBOX_FIRST;
+	int DMA_SKYBOX_LAST;int DMA_PRERENDER_FIRST;int DMA_PRERENDER_LAST;int DMA_SCENE_FIRST;int DMA_SCENE_LAST;int DMA_UNUSED_FIRST;int DMA_UNUSED_LAST;
+	int DMA_SOFTSPRITE;int DMA_BLANK_FIRST;int DMA_BLANK_LAST;int ACTID_LINK;int OFS_OVL_PLAYER_ACTOR_INIT_HI;int OFS_OVL_PLAYER_ACTOR_INIT_LO;
+	int OFS_OVL_PLAYER_ACTOR_DEST_HI;int OFS_OVL_PLAYER_ACTOR_DEST_LO;int OFS_OVL_PLAYER_ACTOR_MAIN_HI;int OFS_OVL_PLAYER_ACTOR_MAIN_LO;
+	int OFS_OVL_PLAYER_ACTOR_DRAW_HI;int OFS_OVL_PLAYER_ACTOR_DRAW_LO;int OFS_OVL_KALEIDO_SCOPE_INIT_HI;int OFS_OVL_KALEIDO_SCOPE_INIT_LO;
+	int OFS_OVL_KALEIDO_SCOPE_DRAW_HI;int OFS_OVL_KALEIDO_SCOPE_DRAW_LO;
 
-/* global variables */
-char *g_tsv;
-
-/* how to use */
-/* uncomment the enum associated with the OoT version you *
- * are targeting, and comment out or delete the others    */
-
-/* OoT debug
-enum {
-	TBL_OBJECT               = 0x00B9E6C8  // object table
-	, TBL_OBJECT_ENTRIES     = 402         // object count
-	, TBL_ACTOR              = 0x00B8D440  // actor overlay table
-	, TBL_ACTOR_ENTRIES      = 471         // actor overlay count
-	, TBL_PARTICLE           = 0x00B8CB50  // particle overlay table
-	, TBL_PARTICLE_ENTRIES   = 37          // particle overlay count
-	, TBL_SCENE              = 0x00BA0BB0  // scene table
-	, TBL_SCENE_ENTRIES      = 110         // scene count
-	, TBL_ROUTE              = 0x00B9F360  // route table
-	, TBL_ROUTE_ENTRIES      = 1556        // route count
-	, TBL_DMA                = 0x00012F70  // dma table
-	, TBL_DMA_ENTRIES        = 1548        // dma entries
-	, TBL_OVL_GAMESTATE      = 0x00B969D0  // ovl_title
-	, TBL_OVL_PLAYER         = 0x00BA4340  // ovl_kaleido_scope
-	, TBL_OVL_MAPMARK        = 0x00B97298  // ovl_map_mark_data
+/*OoT debug */
+void
+debugvariables() 
+{
+	IS_DEBUG						 = 1   //a friendly way to check if we are in debug
+	;TBL_OBJECT              		 = 0x00B9E6C8  // object table
+	; N_ROGO 						 = 0x01AA1000 //0938			
+	; N_ROGO_SIZE					 = 0x00002DC0	
+	; N_ROGO_DMA					 = 938
+	; TBL_OBJECT_ENTRIES 		     = 402         // object count
+	; TBL_ACTOR        		         = 0x00B8D440  // actor overlay table
+	; TBL_ACTOR_ENTRIES    		     = 471         // actor overlay count
+	; TBL_PARTICLE          		 = 0x00B8CB50  // particle overlay table
+	; TBL_PARTICLE_ENTRIES 		     = 37          // particle overlay count
+	; TBL_SCENE            		     = 0x00BA0BB0  // scene table
+	; TBL_SCENE_ENTRIES    		     = 110         // scene count
+	; TBL_ROUTE             		 = 0x00B9F360  // route table
+	; TBL_ROUTE_ENTRIES     		 = 1556        // route count
+	; TBL_MAP_SELECT				 = 0x00001430  // map select table relative to ovl_select file
+	; TBL_MAP_SELECT_ENTRIES		 = 125		   // number of map select entries	
+	; TBL_AUDIOSAMPLE				 = 0x00BCCDA0  //audiosample table
+	; TBL_AUDIOTABLE_FILE			 = 0x00094870	
+	; TBL_AUDIOTABLE_FILE_SIZE       = 0x00451390
+	; TBL_AUDIOBANK 				 = 0x00BCC270  //audiobanktable
+	; TBL_AUDIOBANK_FILE 			 = 0x00019030  //audiobank file
+	; TBL_SEQUENCEINSTRUMENTSET		 = 0x00BCC4E0  // instrument set table
+	; TBL_SEQUENCE_FILE 		     = 0x00044DF0  // sequence file offset
+	; TBL_AUDIOSEQ				     = 0x00BCC6A0  // sequence pointer table
+	; TBL_ENTRANCECUTSCENE 		     = 0x00B95394  // entrancecutscene table
+	; TBL_ENTRANCECUTSCENE_ENTRIES   = 34          // entrancecutscene count	
+	; TBL_MESSAGE 					 = 0x00BC24C0  // offset for message table
+	; TBL_MESSAGE_ENTRIES  		     = 2116        // entrancecutscene count
+	; TBL_MESSAGE_DATA			     = 0x008C6000  //offset for english text
+	; TBL_RESTRICTIONFLAG   		 = 0x00B9CA10  //offset for restricitonflag table
+	; TBL_RESTRICTIONFLAG_ENTRIES    = 73	       //restrictionflag count
+	; TBL_DMA               		 = 0x00012F70  // dma table
+	; TBL_DMA_ENTRIES       		 = 1548        // dma entries
+	; TBL_OVL_GAMESTATE     		 = 0x00B969D0  // ovl_title
+	; TBL_OVL_PLAYER        		 = 0x00BA4340  // ovl_kaleido_scope
+	; TBL_OVL_MAPMARK      		     = 0x00B97298  // ovl_map_mark_data
 	
-	, TITLECARD_W            = 144         // title card dimensions
-	, TITLECARD_H            = 24          // use 72 to include de, fr
-	, VRAM_CODE              = 0x8001CE60  // vram start of code
-	, VROM_CODE              = 0x00A94000  // vrom start of code
-	, VROM_PLAYER            = 0x00C010B0  // vrom start of player_actor
+	; TITLECARD_W          		     = 144         // title card dimensions
+	; TITLECARD_H          		     = 24          // use 72 to include de; fr
+	; VRAM_CODE              		 = 0x8001CE60  // vram start of code
+	; VROM_CODE            		     = 0x00A94000  // vrom start of code
+	; VROM_CODE_SIZE				 = 0x0013AF30
+	; VROM_PLAYER          		     = 0x00C010B0  // vrom start of player_actor
 	
-	, DMA_ITEM_FIELD         = 9           // icon_item_field_static
-	, DMA_ITEM_LOCALIZED     = 14          // last icon_item_x_static
-	, DMA_CODE               = 28
-	, DMA_OVL_TITLE
-	, DMA_OVL_SELECT
-	, DMA_OVL_OPENING
-	, DMA_OVL_FILE_CHOOSE
-	, DMA_OVL_KALEIDO_SCOPE
-	, DMA_OVL_PLAYER_ACTOR
-	, DMA_OVL_MAP_MARK_DATA
+	; DMA_ITEM_FIELD         		 = 9           // icon_item_field_static
+	; DMA_ITEM_LOCALIZED    		 = 14          // last icon_item_x_static
+	; DMA_CODE             		     = 28
+	; DMA_OVL_TITLE					 = 29
+	; DMA_OVL_SELECT				 = 30
+	; DMA_OVL_OPENING				 = 31
+	; DMA_OVL_FILE_CHOOSE			 = 32
+	; DMA_OVL_KALEIDO_SCOPE			 = 33
+	; DMA_OVL_PLAYER_ACTOR			 = 34
+	; DMA_OVL_MAP_MARK_DATA			 = 35
 	
-	, DMA_ACTOR_FIRST        = 36          // En_Test
-	, DMA_ACTOR_LAST         = 497         // Shot_Sun
-	, DMA_OBJECT_FIRST       = 498         // gameplay_keep
-	, DMA_OBJECT_LAST        = 879         // object_zl4
-	, DMA_G_PN_FIRST         = 880         // g_pn_01
-	, DMA_G_PN_LAST          = 936         // g_pn_57
-	, DMA_SKYBOX_FIRST       = 941         // vr_fine0_static
-	, DMA_SKYBOX_LAST        = 960         // vr_holy1_pal_static
-	, DMA_PRERENDER_FIRST    = 961         // vr_MDVR_static
-	, DMA_PRERENDER_LAST     = 1004        // vr_FCVR_pal_static
-	, DMA_SCENE_FIRST        = 1007        // syotes_scene
-	, DMA_SCENE_LAST         = 1517        // test01_room_0
-	, DMA_UNUSED_FIRST       = 1518        // bump_texture_static
-	, DMA_UNUSED_LAST        = 1530        // anime_texture_6_static
-	, DMA_SOFTSPRITE         = 1531        // softsprite_matrix_static
-	, DMA_BLANK_FIRST        = 1532        // first blank dma entry
-	, DMA_BLANK_LAST         = 1547        // last blank dma entry
+	; DMA_ACTOR_FIRST      		    = 36          // En_Test
+	; DMA_ACTOR_LAST        	    = 497         // Shot_Sun
+	; DMA_OBJECT_FIRST      		= 498         // gameplay_keep
+	; DMA_OBJECT_LAST       		= 879         // object_zl4
+	; DMA_G_PN_FIRST       		    = 880         // g_pn_01
+	; DMA_G_PN_LAST         		= 936         // g_pn_57
+	; DMA_SKYBOX_FIRST      		= 941         // vr_fine0_static
+	; DMA_SKYBOX_LAST       		= 960         // vr_holy1_pal_static
+	; DMA_PRERENDER_FIRST   		= 961         // vr_MDVR_static
+	; DMA_PRERENDER_LAST   		    = 1004        // vr_FCVR_pal_static
+	; DMA_SCENE_FIRST       		= 1007        // syotes_scene
+	; DMA_SCENE_LAST       		    = 1517        // test01_room_0
+	; DMA_UNUSED_FIRST      		= 1518        // bump_texture_static
+	; DMA_UNUSED_LAST      		    = 1530        // anime_texture_6_static
+	; DMA_SOFTSPRITE        		= 1531        // softsprite_matrix_static
+	; DMA_BLANK_FIRST       		= 1532        // first blank dma entry
+	; DMA_BLANK_LAST        		= 1547        // last blank dma entry
 	
-	, ACTID_LINK             = 0           // link's actor id
+	; ACTID_LINK         		    = 0           // link's actor id
 	
 	// hard-coded function pointers for ovl_player_actor
-	, OFS_OVL_PLAYER_ACTOR_INIT_HI  = 0x00B288F8  // init
-	, OFS_OVL_PLAYER_ACTOR_INIT_LO  = 0x00B28900
-	, OFS_OVL_PLAYER_ACTOR_DEST_HI  = 0x00B28908  // dest
-	, OFS_OVL_PLAYER_ACTOR_DEST_LO  = 0x00B28914
-	, OFS_OVL_PLAYER_ACTOR_MAIN_HI  = 0x00B2891C  // main (update)
-	, OFS_OVL_PLAYER_ACTOR_MAIN_LO  = 0x00B28928
-	, OFS_OVL_PLAYER_ACTOR_DRAW_HI  = 0x00B28930  // draw
-	, OFS_OVL_PLAYER_ACTOR_DRAW_LO  = 0x00B2893C
+	; OFS_OVL_PLAYER_ACTOR_INIT_HI  = 0x00B288F8  // init
+	; OFS_OVL_PLAYER_ACTOR_INIT_LO  = 0x00B28900
+	; OFS_OVL_PLAYER_ACTOR_DEST_HI  = 0x00B28908  // dest
+	; OFS_OVL_PLAYER_ACTOR_DEST_LO  = 0x00B28914
+	; OFS_OVL_PLAYER_ACTOR_MAIN_HI  = 0x00B2891C  // main (update)
+	; OFS_OVL_PLAYER_ACTOR_MAIN_LO  = 0x00B28928
+	; OFS_OVL_PLAYER_ACTOR_DRAW_HI  = 0x00B28930  // draw
+	; OFS_OVL_PLAYER_ACTOR_DRAW_LO  = 0x00B2893C
 	
 	// hard-coded function pointers for ovl_kaleido_scope
-	, OFS_OVL_KALEIDO_SCOPE_INIT_HI = 0x00B33208  // init
-	, OFS_OVL_KALEIDO_SCOPE_INIT_LO = 0x00B3320C
-	, OFS_OVL_KALEIDO_SCOPE_DRAW_HI = 0x00B33218  // draw
-	, OFS_OVL_KALEIDO_SCOPE_DRAW_LO = 0x00B33220
-}; */
+	; OFS_OVL_KALEIDO_SCOPE_INIT_HI = 0x00B33208  // init
+	; OFS_OVL_KALEIDO_SCOPE_INIT_LO = 0x00B3320C
+	; OFS_OVL_KALEIDO_SCOPE_DRAW_HI = 0x00B33218  // draw
+	; OFS_OVL_KALEIDO_SCOPE_DRAW_LO = 0x00B33220
+	;
+}
 
-/* OoT NTSC 1.0 */
-enum {
-	TBL_OBJECT               = 0x00B6EF58  // object table
-	, TBL_OBJECT_ENTRIES     = 402         // object count
-	, TBL_ACTOR              = 0x00B5E490  // actor overlay table
-	, TBL_ACTOR_ENTRIES      = 471         // actor overlay count
-	, TBL_PARTICLE           = 0x00B5DBA0  // particle overlay table
-	, TBL_PARTICLE_ENTRIES   = 37          // particle overlay count
-	, TBL_SCENE              = 0x00B71440  // scene table
-	, TBL_SCENE_ENTRIES      = 101         // scene count
-	, TBL_ROUTE              = 0x00B6FBF0  // route table
-	, TBL_ROUTE_ENTRIES      = 1556        // route count
-	, TBL_DMA                = 0x00007430  // dma table
-	, TBL_DMA_ENTRIES        = 1526        // dma entries
-	, TBL_OVL_GAMESTATE      = 0x00B672A0  // game state overlay table
-	, TBL_OVL_PLAYER         = 0x00B743E0  // pause/player ovl table
-	, TBL_OVL_MAPMARK        = 0x00B67B58  // map_mark_data ovl table
+void
+ocarinaoftimevariables()
+{
+	IS_DEBUG				 		 = 0 //a friendly way to check for 1.0
+	;TBL_OBJECT              		 = 0x00B6EF58  // object table
+	; TBL_OBJECT_ENTRIES     		 = 402         // object count
+	; TBL_ACTOR              		 = 0x00B5E490  // actor overlay table
+	; TBL_ACTOR_ENTRIES      		 = 471         // actor overlay count
+	; TBL_PARTICLE           		 = 0x00B5DBA0  // particle overlay table
+	; TBL_PARTICLE_ENTRIES   		 = 37          // particle overlay count
+	; TBL_SCENE              		 = 0x00B71440  // scene table
+	; TBL_SCENE_ENTRIES      		 = 101         // scene count
+	; TBL_ROUTE              		 = 0x00B6FBF0  // route table
+	; TBL_ROUTE_ENTRIES      		 = 1556        // route count
+	; TBL_MAP_SELECT				 = 0x000013D0  // map select table relative to ovl_select file
+	; TBL_MAP_SELECT_ENTRIES		 = 115		   // number of map select entries	
+	; TBL_AUDIOSAMPLE				 = 0x00B8A1D0  //audiosample table
+	; TBL_AUDIOBANK 				 = 0x00B896A0  //audiobanktable
+	; TBL_AUDIOBANK_FILE 			 = 0x0000D390  //audiobank file
+	; TBL_SEQUENCEINSTRUMENTSET		 = 0x00B89910  // instrument set table
+	; TBL_SEQUENCE_FILE 		     = 0x00029DE0  // sequence file offset
+	; TBL_AUDIOTABLE_FILE			 = 0x00079470  // pointer to the audiotable
+	; TBL_AUDIOSEQ 		    		 = 0x00B89AD0  // sequence pointer table
+	; TBL_ENTRANCECUTSCENE 		     = 0x00B65C64  // entrancecutscene table
+	; TBL_ENTRANCECUTSCENE_ENTRIES   = 33          // entrancecutscene count	
+	; TBL_MESSAGE 					 = 0x00B849EC  // offset for message table
+	; TBL_MESSAGE_ENTRIES  		     = 2116       // entrancecutscene count
+	; TBL_MESSAGE_DATA			     = 0x0092D000  //offset for english text
+	; TBL_MESSAGE_DATA_SIZE			 = 0x00038120
+	; TBL_RESTRICTIONFLAG   		 = 0x00B6D2B0  //offset for restricitonflag table
+	; TBL_RESTRICTIONFLAG_ENTRIES    = 73	       //restrictionflag count
+	; TBL_DMA                = 0x00007430  // dma table
+	; TBL_DMA_ENTRIES        = 1526        // dma entries
+	; TBL_OVL_GAMESTATE      = 0x00B672A0  // game state overlay table
+	; TBL_OVL_PLAYER         = 0x00B743E0  // pause/player ovl table
+	; TBL_OVL_MAPMARK        = 0x00B67B58  // map_mark_data ovl table
+	; TITLECARD_W            = 144         // title card dimensions
+	; TITLECARD_H            = 48          // use 24 for jp only
+	; VRAM_CODE              = 0x800110A0  // vram start of code
+	; VROM_CODE              = 0x00A87000  // vrom start of code
+	; VROM_CODE_SIZE		 = 0x00103D30	
+	; VROM_PLAYER            = 0x00BCDB70  // vrom start of player_actor
 	
-	, TITLECARD_W            = 144         // title card dimensions
-	, TITLECARD_H            = 48          // use 24 for jp only
-	, VRAM_CODE              = 0x800110A0  // vram start of code
-	, VROM_CODE              = 0x00A87000  // vrom start of code
-	, VROM_PLAYER            = 0x00BCDB70  // vrom start of player_actor
+	; DMA_ITEM_FIELD         = 10          // icon_item_field_static
+	; DMA_ITEM_LOCALIZED     = 14          // last icon_item_x_static
+	; DMA_CODE               = 27
+	; DMA_OVL_TITLE			 = 29
+	; DMA_OVL_SELECT		 = 30
+	; DMA_OVL_OPENING		 = 31
+	; DMA_OVL_FILE_CHOOSE	 = 32
+	; DMA_OVL_KALEIDO_SCOPE	 = 33
+	; DMA_OVL_PLAYER_ACTOR	 = 34
+	; DMA_OVL_MAP_MARK_DATA	 = 35
 	
-	, DMA_ITEM_FIELD         = 10          // icon_item_field_static
-	, DMA_ITEM_LOCALIZED     = 14          // last icon_item_x_static
-	, DMA_CODE               = 27
-	, DMA_OVL_TITLE          = 29
-	, DMA_OVL_SELECT
-	, DMA_OVL_OPENING
-	, DMA_OVL_FILE_CHOOSE
-	, DMA_OVL_KALEIDO_SCOPE
-	, DMA_OVL_PLAYER_ACTOR
-	, DMA_OVL_MAP_MARK_DATA
+	; DMA_ACTOR_FIRST        = 36          // En_Test
+	; DMA_ACTOR_LAST         = 497         // Shot_Sun
+	; DMA_OBJECT_FIRST       = 498         // gameplay_keep
+	; DMA_OBJECT_LAST        = 879         // object_zl4
+	; DMA_G_PN_FIRST         = 880         // g_pn_01
+	; DMA_G_PN_LAST          = 936         // g_pn_57
+	; DMA_SKYBOX_FIRST       = 941         // vr_fine0_static
+	; DMA_SKYBOX_LAST        = 960         // vr_holy1_pal_static
+	; DMA_PRERENDER_FIRST    = 961         // vr_MDVR_static
+	; DMA_PRERENDER_LAST     = 1004        // vr_FCVR_pal_static
+	; DMA_SCENE_FIRST        = 1007        // ddan_scene
+	; DMA_SCENE_LAST         = 1495        // ganontikasonogo_room_1
+	; DMA_UNUSED_FIRST       = 1496        // bump_texture_static
+	; DMA_UNUSED_LAST        = 1508        // anime_texture_6_static
+	; DMA_SOFTSPRITE         = 1509        // softsprite_matrix_static
+	; DMA_BLANK_FIRST        = 1510        // first blank dma entry
+	; DMA_BLANK_LAST         = 1525        // last blank dma entry
 	
-	, DMA_ACTOR_FIRST        = 36          // En_Test
-	, DMA_ACTOR_LAST         = 497         // Shot_Sun
-	, DMA_OBJECT_FIRST       = 498         // gameplay_keep
-	, DMA_OBJECT_LAST        = 879         // object_zl4
-	, DMA_G_PN_FIRST         = 880         // g_pn_01
-	, DMA_G_PN_LAST          = 936         // g_pn_57
-	, DMA_SKYBOX_FIRST       = 941         // vr_fine0_static
-	, DMA_SKYBOX_LAST        = 960         // vr_holy1_pal_static
-	, DMA_PRERENDER_FIRST    = 961         // vr_MDVR_static
-	, DMA_PRERENDER_LAST     = 1004        // vr_FCVR_pal_static
-	, DMA_SCENE_FIRST        = 1007        // ddan_scene
-	, DMA_SCENE_LAST         = 1495        // ganontikasonogo_room_1
-	, DMA_UNUSED_FIRST       = 1496        // bump_texture_static
-	, DMA_UNUSED_LAST        = 1508        // anime_texture_6_static
-	, DMA_SOFTSPRITE         = 1509        // softsprite_matrix_static
-	, DMA_BLANK_FIRST        = 1510        // first blank dma entry
-	, DMA_BLANK_LAST         = 1525        // last blank dma entry
-	
-	, ACTID_LINK             = 0           // link's actor id
+	; ACTID_LINK             = 0           // link's actor id
 	
 	// hard-coded function pointers for ovl_player_actor
-	, OFS_OVL_PLAYER_ACTOR_INIT_HI  = 0x00B0D5B8  // init
-	, OFS_OVL_PLAYER_ACTOR_INIT_LO  = 0x00B0D5C0
-	, OFS_OVL_PLAYER_ACTOR_DEST_HI  = 0x00B0D5C8  // dest
-	, OFS_OVL_PLAYER_ACTOR_DEST_LO  = 0x00B0D5D4
-	, OFS_OVL_PLAYER_ACTOR_MAIN_HI  = 0x00B0D5DC  // main (update)
-	, OFS_OVL_PLAYER_ACTOR_MAIN_LO  = 0x00B0D5E8
-	, OFS_OVL_PLAYER_ACTOR_DRAW_HI  = 0x00B0D5F0  // draw
-	, OFS_OVL_PLAYER_ACTOR_DRAW_LO  = 0x00B0D5FC
+	; OFS_OVL_PLAYER_ACTOR_INIT_HI  = 0x00B0D5B8  // init
+	; OFS_OVL_PLAYER_ACTOR_INIT_LO  = 0x00B0D5C0
+	; OFS_OVL_PLAYER_ACTOR_DEST_HI  = 0x00B0D5C8  // dest
+	; OFS_OVL_PLAYER_ACTOR_DEST_LO  = 0x00B0D5D4
+	; OFS_OVL_PLAYER_ACTOR_MAIN_HI  = 0x00B0D5DC  // main (update)
+	; OFS_OVL_PLAYER_ACTOR_MAIN_LO  = 0x00B0D5E8
+	; OFS_OVL_PLAYER_ACTOR_DRAW_HI  = 0x00B0D5F0  // draw
+	; OFS_OVL_PLAYER_ACTOR_DRAW_LO  = 0x00B0D5FC
 	
 	// hard-coded function pointers for ovl_kaleido_scope
-	, OFS_OVL_KALEIDO_SCOPE_INIT_HI = 0x00B0FE48  // init
-	, OFS_OVL_KALEIDO_SCOPE_INIT_LO = 0x00B0FE50
-	, OFS_OVL_KALEIDO_SCOPE_DRAW_HI = 0x00B0FE58  // draw
-	, OFS_OVL_KALEIDO_SCOPE_DRAW_LO = 0x00B0FE64
-};
+	; OFS_OVL_KALEIDO_SCOPE_INIT_HI = 0x00B0FE48  // init
+	; OFS_OVL_KALEIDO_SCOPE_INIT_LO = 0x00B0FE50
+	; OFS_OVL_KALEIDO_SCOPE_DRAW_HI = 0x00B0FE58  // draw
+	; OFS_OVL_KALEIDO_SCOPE_DRAW_LO = 0x00B0FE64;
+}
 
 /* valid (fmt, bpp) options for png functions */
 enum n64texconv_fmt
@@ -176,6 +232,7 @@ enum bool
 	, true = 1
 	, compress = 1
 };
+
 
 /* helper function that writes lui, addiu pair into rom; hi and lo
    must be rom offsets of lui and addiu opcodes, respectively */
@@ -215,6 +272,8 @@ system_overlay(struct rom *rom)
 	char *outname;
 	char *name;
 	FILE *fp;
+	FILE *fp2;
+	int   var;
 	int  *entry;
 	int  *Oarr;
 	int  *arr;
@@ -225,7 +284,7 @@ system_overlay(struct rom *rom)
 	int   ptr;
 	int   i;
 	
-	dir_enter("overlay");
+	//dir_enter("overlay");
 	
 	/* allocate buffer */
 	outname = malloc(64);
@@ -296,7 +355,7 @@ system_overlay(struct rom *rom)
 		/* enter overlay name directory */
 		name = substring(filename, i);
 		dir_enter(name);
-		
+		dir_enter(VANILLA);
 		/* go to table entry (skip first word) */
 		rom.seek(entry[i] + 4);
 
@@ -350,8 +409,42 @@ system_overlay(struct rom *rom)
 		
 		/* extract file */
 		rom.extract(outname, start, end);
+
+		/*build mapselect table*/
+		if (!strcmp(name, "ovl_select"))
+		{
+
+			rom.extract("ovl_select - copy.bin", start, end);
+			dir_leave();
+			dir_leave();
+			dir_leave();
+			dir_enter("scene");
+			dir_enter(VANILLA);
+
+			/*open map select table and write header*/
+			fp2 = fopen("mapselect.tsv","wb");
+			fprintf(fp2,"index\tentrance index\n");
+
+			/*find the table entries in the rom and write them to the table*/
+			rom.seek(start + TBL_MAP_SELECT+10);
+			var = 0;
+			while (var < TBL_MAP_SELECT_ENTRIES)
+			{
+				fprintf(fp2, "%d\t%X\n", var+1,  rom.read16());
+				rom.seek_cur(10);
+				var++;
+			}
+			/*close table file*/
+			fclose(fp2);
+			dir_leave();
+			dir_leave();
+			dir_enter("system");
+			dir_enter("ovl_select");
+			dir_enter(VANILLA);
+		}
 		
 		/* advance to next */
+		dir_leave();
 		dir_leave();
 		fclose(fp);
 		i++;
@@ -360,7 +453,6 @@ system_overlay(struct rom *rom)
 	/* cleanup */
 	free(outname);
 	free(Oarr);
-	dir_leave();
 }
 
 void
@@ -369,6 +461,913 @@ systemdir(struct rom *rom)
 	dir_enter("system");
 	system_overlay(rom);
 	dir_leave();
+}
+
+void
+audiotable(struct rom *rom)
+{	
+	FILE *fp;
+	FILE *data;
+	FILE *data2;
+	FILE *table;
+	struct folder *list;
+	struct folder *list2;
+	int maxlist;
+	int index;
+	int index2;
+	int var;
+	int var2;
+	int name;
+	int name2;
+	int sz;
+	int sz2;
+
+	/*allocate name memory (may not be necessary)*/
+	name = malloc(256);
+	name2 = malloc(256);
+
+	/*open directory*/
+	dir_enter("audio");
+	dir_enter("audiotable");
+	dir_enter(VANILLA);
+
+	/*open audiosample-table for writing and enter delete me folder*/
+	table = fopen("audiotable.tsv", "wb");
+	dir_enter("_deleteme");
+
+	/*print the start of the sample-table file*/
+	fprintf(table, "start\tlength\tname\n");
+
+	/*start a list of the files and dump them into indexes*/
+	list = list.new(".bin");
+	index = 0;
+	maxlist = list.remaining();
+	while (list.remaining())
+	{
+		/*display message in console*/
+		printf("\raudiotable...%d/%d: ", maxlist-list.remaining(), maxlist-1);
+
+		/*open the sample and predictors*/
+		data = loadfile(list.name(),&sz, 0);
+		sprintf(name, "_%s", list.name());
+		data2 = loadfile(name,&sz2, 0);
+
+		/*fix the name for writing*/
+		sscanf(list.name(), "%d- %s", &var, name);
+		sprintf(name2, "%d-%s",index, name);
+		
+		/*add sample offset, length, and name to sampletable*/
+		fprintf(table, "%X\t%X\t%s\n", list.index(), sz,name2);
+		
+		/*leave deleteme and create a folder for the sample*/
+		dir_leave();
+		dir_enter(name2);
+
+		/*extract the binary for the sample*/
+		rom.extract("RawSound.bin", TBL_AUDIOTABLE_FILE + list.index(), TBL_AUDIOTABLE_FILE + list.index()+sz);
+
+		/*open the predictors file for writing*/
+		fp = fopen("Predictors.bin", "wb");
+
+		/*extract the predictors by looking for the loop-predictors or end of file(skips first byte which is precision)*/
+		var = 1;
+		while ((var < sz2 -16 && get32(&data2[var+ 8]) != 0xFFFFFFFF) || var < 18)
+		{
+			fprintf(fp, "%c", get8(&data2[var]));
+			var ++;
+		}
+		fclose(fp);
+
+		/*write the loop-info as well as precision from first byte*/
+		fp = fopen("config.tsv", "wb");
+		fprintf(fp, "precision\tloopstart\tloopend  \tloopcount\tlooptail \n");
+		fprintf(fp, "%08X\t%08X\t%08X\t%08X\t", get8(&data2[0]),get32(&data2[var]),  get32(&data2[var+4]), get32(&data2[var+8]));
+		fprintf(fp,"%08X\n",get32(&data2[var+12]));
+		fclose(fp);
+
+		/*if there is a loop write the loop-predictors*/
+		if (get32(&data2[var+ 8]) == 0xFFFFFFFF)
+		{	
+			fp = fopen("LoopPredictors.bin","wb");
+			var = var + 16;
+			while (var < sz2)
+			{
+				fprintf(fp, "%c", get8(&data2[var]));
+				var++;
+			}
+			fclose(fp);		
+		}
+		
+		/*advance the index, free data, and go back to deletemefolder for next sample data*/
+		list.next();
+		index ++;
+		free(data);
+		free(data2);
+		dir_leave();
+		dir_enter("_deleteme");
+		
+
+	}
+	/*leave deleteme and close the audiotable.tsv for writing and open it for reading*/
+	dir_leave();
+	list.free();
+	fclose(table);
+	table = loadfile("audiotable.tsv", 0, 0);
+	printf("success!\n");
+
+	/*now we are going to fix the audiobanks to have the correct index*/
+	/*exit the directory and enter the banks*/
+	dir_leave();
+	dir_leave();
+	dir_enter("banks");
+	dir_enter(VANILLA);
+
+	/*loops through all the banks*/
+	list = list.new(0);
+	maxlist = list.remaining();
+	while (list.remaining())
+	{
+		/*print message*/
+		printf("\rfixing audiobank...%d/%d: ", maxlist-list.remaining(), maxlist-1);
+			
+		/*enter the specific bank's folder*/
+		dir_enter(list.name());
+		
+		/*loop through all the instrument files in the bank*/
+		list2 = list2.new(".tsv");
+		while (list2.remaining())
+		{
+			/*opens the instrument file for reading and later for writing over*/
+			data = loadfile(list2.name(),&sz,0);
+			//sprintf(name, "_%s", list2.name());
+			fp = fopen(list2.name(), "wb");
+
+			/*copies the first part of the instrument*/
+			name2 = tsv_col_row(data,"dcy1rt",2);
+			var = 0;
+			while (var < sz && get32(name2) != get32(&data[var]))
+			{
+				fprintf(fp, "%c", get8(&data[var]));
+				var++;
+			}
+
+			/*checks if sample one is full and then finds the sample index, else writes NULL*/
+			if (strcmp(name2, "NULL"))
+			{
+				/*compares the sample offset from file to audiotable.tsv*/
+				sscanf(name2, "%X", &var2);
+				name = tsv_col_row(table, "start", 1);
+				sscanf(name, "%X", &var);
+				index =0;
+				while (var < var2)
+				{
+					index++;
+					name = tsv_col_row(table, "start", index + 1);
+					sscanf(name, "%X", &var);
+				}
+				/*writes the new sample index to the instrument file*/
+				sprintf(name, "%d", index);
+				sprintf(name, "%s", name);
+				fprintf(fp, "%s\t%s\t", name, tsv_col_row(data,"dcy1lvl",2));
+			}
+			else
+			{
+				fprintf(fp, "NULL\tNULLNULL\t");
+			}
+			/*checks if sample two is full and then finds the sample index, else writes NULL*/
+			name2 = tsv_col_row(data,"dcy2rt",2);
+			if (strcmp(name2, "NULL"))
+			{
+
+				/*compares the sample offset from file to audiotable.tsv*/
+				sscanf(name2, "%X", &var2);
+				name = tsv_col_row(table, "start", 1);
+				sscanf(name, "%X", &var);
+				index =0;
+				while (var < var2)
+				{
+					index++;
+					name = tsv_col_row(table, "start", index + 1);
+					sscanf(name, "%X", &var);
+				}
+
+				/*writes the new sample index to the instrument file*/
+				sprintf(name, "%d", index);
+				sprintf(name, "%s", name);
+				fprintf(fp, "%s\t%s\t", name, tsv_col_row(data,"dcy2lvl",2));
+			}
+			else
+			{
+				fprintf(fp, "NULL\tNULLNULL\t");
+			}
+			/*checks if there is sample three and then finds the sample index, else writes NULL*/
+			name2 = tsv_col_row(data,"split1",3);
+			if (strcmp(name2, "NULL"))
+			{
+				/*compares the sample offset from file to audiotable.tsv*/
+				sscanf(name2, "%X", &var2);
+				name = tsv_col_row(table, "start", 1);
+				sscanf(name, "%X", &var);
+				index =0;
+				while (var < var2)
+				{
+					index++;
+					name = tsv_col_row(table, "start", index + 1);
+					sscanf(name, "%X", &var);
+				}
+
+				/*writes the new sample index to the instrument file*/
+				sprintf(name, "%d", index);
+				sprintf(name, "%s", name);
+				fprintf(fp, "%s\t%s", name, tsv_col_row(data,"split2",3));
+			}
+			else
+			{
+				fprintf(fp, "NULL\tNULLNULL\t");
+			}
+
+			/*advances to next instrument and frees the data*/
+			list2.next();
+			free(data);
+			fclose(fp);
+		}
+
+		/*checks if there's drums to update*/
+		if (file_exists("_drums.tsv"))
+		{
+			/*opens the drum file for reading and editing*/
+			data = loadfile("_drums.tsv",&sz,0);
+			fp = fopen("_drums.tsv", "wb");
+
+			/*copies the beginning of the drum file */
+			name2 = tsv_col_row(data,"atkrate",3);
+			var = 0;
+			while (var < sz && get32(name2) != get32(&data[var]))
+			{
+				fprintf(fp, "%c", get8(&data[var]));
+				var++;
+			}
+			
+			/*updates each sample's index in the drum file*/
+			index2 = 0;
+			while (tsv_col_row(data,"atkrate",index2 + 4) || tsv_col_row(data,"atklvl",index2 + 4))
+			{
+				/*compares the sample offset from file to audiotable.tsv*/
+				name2 = tsv_col_row(data,"atkrate",index2 + 3);
+				sscanf(name2, "%X", &var2);
+				name = tsv_col_row(table, "start", 1);
+				sscanf(name, "%X", &var);
+				index =0;
+				while (var < var2)
+				{
+					index ++;
+					name = tsv_col_row(table, "start", index + 1);
+					sscanf(name, "%X", &var);
+				}
+
+				/*writes the new sample index to the instrument file*/
+				sprintf(name, "%d", index);
+				sprintf(name, "%s", name);
+				fprintf(fp, "%s\t%s\t%s\t\t\t\n", name, tsv_col_row(data,"atklvl",index2 + 3),tsv_col_row(data,"dcy1rt",index2 + 3));
+				index2 ++;
+			}
+			free(data);
+			fclose(fp);
+
+		}
+		/*checks if there are sound effects*/
+		if (file_exists("_soundeffects.tsv"))
+		{
+			/*opens the soundeffect file for reading and writing*/
+			data = loadfile("_soundeffects.tsv",&sz,0);
+			fp = fopen("_soundeffects.tsv", "wb");
+
+			/*copies the beginning of the sfx file */		
+			name2 = tsv_col_row(data,"sample",1);
+			var = 0;
+			while (var < sz && get32(name2) != get32(&data[var]))
+			{
+				fprintf(fp, "%c", get8(&data[var]));
+				var++;
+			}
+
+			/*updates each sample's index in the sfx file*/
+			index2 = 0;	
+			while (tsv_col_row(data,"sample",index2 + 2) || tsv_col_row(data,"pitch",index2 + 2))
+			{
+				/*compares the sample offset from file to audiotable.tsv*/
+				name2 = tsv_col_row(data,"sample",index2 + 1);
+				sscanf(name2, "%X", &var2);
+				name = tsv_col_row(table, "start",  1);
+				sscanf(name, "%X", &var);
+				index =0;
+				while (var < var2)
+				{
+					index++;
+					name = tsv_col_row(table, "start", index + 1);
+					sscanf(name, "%X", &var);
+				}
+
+				/*writes the new sample index to the instrument file*/
+				sprintf(name, "%d", index);
+				sprintf(name, "%s", name);
+				fprintf(fp, "%s\t%s\n", name, tsv_col_row(data,"pitch",index2 + 1));
+				index2 ++;
+			}
+			free(data);
+			fclose(fp);
+		}
+		/*leave the bank and advance to next bank*/
+		dir_leave();
+		list.next();
+	}
+	/*linebreak for messaging and leaves to the root folder*/
+	printf("success!\n");
+	dir_leave();
+	dir_leave();
+	dir_leave();
+}
+
+void
+dumppredictors(struct rom *rom, int file, int bankpointer)
+{
+	int start;
+	int size;
+	int var;
+
+	/*stores offset to return to after function*/
+	start = rom.tell();
+
+	/*gets the precision unk for the sample and tosses that in with predicotrs ;)*/
+	rom.seek_cur(-8);
+	fprintf(file, "%c", rom.read8());
+	/*gets the predictor offset*/
+	rom.seek_cur(11);
+	var = rom.read32();
+
+	/*goes to predicotr data and finds size*/
+	rom.seek(TBL_AUDIOBANK_FILE + bankpointer + var);
+	rom.seek_cur(4);
+	size = rom.read32()*32 + 8;
+
+	/*returns to start and copies all the predictor data*/
+	rom.seek_cur(-8);
+	var = 0;
+	while (var < size)
+	{
+		fprintf(file,"%c", rom.read8());
+		var++;
+	}
+	/*gets offset for loop-info and goes there*/
+	rom.seek(start);
+	var = rom.read32();
+	rom.seek(TBL_AUDIOBANK_FILE + bankpointer + var);
+
+	/*checks if there are looppredictors by seeing if the loop info is 0'd*/
+	size = 32;
+	var = rom.read32();
+	rom.seek_cur(4);
+	var = var + rom.read32() + rom.read32();
+	if (var == 0)
+	{
+		size = 16;
+	}
+	else
+	{
+		size = 48;
+	}
+	/*copies the loop info and maybe the loop predictors*/
+	rom.seek_cur(-16);
+	var = 0;
+	while (var < size)
+	{
+		fprintf(file,"%c", rom.read8());
+		var++;
+	}
+	/*return to starting position*/
+	rom.seek(start);
+}
+
+void
+dosample(struct rom *rom, sample, samplelength, *samplelist, *samplenum, name2, bankpointer)
+{
+	FILE *datafile;
+	int var;
+	int samplename;
+
+	/*check if sample already has been dumped*/
+	//printf("\nweherenow\n");
+	samplename = malloc(256);
+	
+	sprintf(samplename, "%X", sample);
+	var = 0;
+	//printf("\n%s - %s\n", samplename, strcmp(tsv_col_row(*samplelist, "sample", var+1)));
+		
+	while (var < *samplenum && strcmp(tsv_col_row(*samplelist, "sample", var+1), samplename))
+	{
+		var++;
+	}
+
+	/*if there's no similar sample, dump the sample and predicotrs and add to the list*/
+	if (var == *samplenum)
+	{
+		*samplenum = *samplenum + 1;
+		*samplelist = new_string(*samplelist,samplename,"\t",0);
+		sprintf(samplename, "%X", samplelength);
+		*samplelist = new_string(*samplelist,samplename,"\t",name2,"\n",0);
+		sprintf(samplename, "_%d- %s -%d.bin",sample,name2,sample+samplelength);
+		datafile = fopen(samplename, "wb");
+		dumppredictors(rom, datafile, bankpointer);
+		fclose(datafile);
+		sprintf(samplename,"%d- %s -%d.bin",sample,name2,sample+samplelength);
+		rom.extract(samplename, TBL_AUDIOTABLE_FILE + sample, TBL_AUDIOTABLE_FILE + sample + samplelength);
+	}
+}
+void
+audiobank(struct rom *rom)
+{	
+	FILE *configfile;
+	FILE *datafile;
+	int *samplelist;
+	int samplenum;
+	int numberofbanks;
+	int index;
+	int instrumentindex;
+	int bankpointer;
+	int instrumentnumber;
+	int sampletablenumber;
+	int sampleoffset;
+	int sample;
+	int samplename;
+	int samplelength;
+	int drums;
+	int sfx;
+	int nameindex;
+	int nameindex2;
+	int oldsample;
+	int instrumentpointer;
+	int name;
+	int name2;
+	int name3;
+	int var;
+	int var2;
+	int sfxnum;
+	int length;
+	int pitch1;
+	int pitch2;
+	int pitch3;
+	int dataptr1;
+	int dataptr2;
+	int dataptr3;
+
+	/*allocate memory for name*/
+	name = malloc(256);
+	name2 = malloc(256);
+	name3 = malloc(256);
+	samplename = malloc(256);
+	
+	/*enter audio folder*/
+	dir_enter("audio");
+	dir_enter("banks");
+	dir_enter(VANILLA);
+
+	/*find and read the number of audiobanks and create the header for the samplelist*/
+	rom.seek(TBL_AUDIOBANK);
+	numberofbanks = rom.read16();
+	samplelist = new_string("sample\tlength\tname\n",0);
+	samplenum = 0;
+
+	/*dump all the audiobanks until index is at the last bank*/ 
+	index = 0;
+	nameindex =0;
+	oldsample = -1;
+	nameindex2 =0;
+	while (index < numberofbanks - 1)
+	{
+		/*display progress*/
+		printf("\raudiobank %d/%d: ", index, numberofbanks-2);
+
+		/*seek to table entry to read bank info*/
+		rom.seek(TBL_AUDIOBANK + 16 + index*16);
+		bankpointer = rom.read32();
+		length = rom.read32();
+		rom.seek_cur(2);
+		sampletablenumber = rom.read8();
+		rom.seek_cur(1);		
+		instrumentnumber = rom.read8();
+		drums = rom.read8();
+		sfxnum = rom.read16();
+	
+		/*sets sample offset for the bank, used later when writing sample pointers.*/
+		rom.seek(TBL_AUDIOSAMPLE + sampletablenumber*16);
+		sampleoffset = rom.read32();
+
+		/*open the bank folder*/
+		if (g_tsv)
+		{
+			sscanf(tsv_col_row(g_tsv,"audiobank",index + 1), "%s", name2);
+			sprintf(name,"%d-%s-%X",index,name2,index);
+		}
+		else
+		{name2 = "sample";
+		sprintf(name,"%d",index);}
+		
+		dir_enter(name);
+
+		/*extracts vanilla data. this is mainly useful for debugging issues in the audio-system*/
+		rom.extract("_vanilla.bin", TBL_AUDIOBANK_FILE + bankpointer, TBL_AUDIOBANK_FILE + bankpointer + length);
+
+		/*checks if there's drums and sfx*/
+		rom.seek(TBL_AUDIOBANK_FILE + bankpointer);
+		drums = rom.read32();
+		sfx = rom.read32();
+
+		/*read each instrument and create files and config table*/
+		instrumentindex = 0;
+		while (instrumentindex < instrumentnumber)
+		{
+			/*find the location of instruments description in the bank*/			
+			rom.seek(TBL_AUDIOBANK_FILE + bankpointer + 8 + instrumentindex*4);
+			instrumentpointer = rom.read32();
+
+			/*if instrument isn't blank*/
+			if (instrumentpointer > 0)		
+			{
+				/*advances the naming scheme forward, skipping one instrument in 1.0*/
+				nameindex++;
+				if  (TBL_AUDIOBANK_FILE != 0x00019030 && nameindex == 57)
+				{
+					nameindex++; 
+				}
+
+				/*sets the name of the instrument and enters the folder*/
+				if (g_tsv)
+				{
+				sscanf(tsv_col_row(g_tsv,"instrument",nameindex), "%s", name2);
+				sprintf(name3,"%d - %s.tsv",instrumentindex,name2);
+				}
+				else
+				{sprintf(name3,"%d - instrument.tsv",instrumentindex);}
+
+				/*open the config file and write the header*/
+				configfile = fopen(name3,"wb");
+				fprintf(configfile, "split1\tsplit2\tsplit3\trelease\tatkrate\tatklvl\tdcy1rt\tdcy1lvl\tdcy2rt\tdcy2lvl\n");
+
+				/*go to the instrument description and read it*/
+				rom.seek(TBL_AUDIOBANK_FILE + bankpointer + instrumentpointer);
+
+				/*write the instrument entry to the config table*/
+				fprintf(configfile, "%d", rom.read8());//split1
+				fprintf(configfile, "\t%d", rom.read8());//split2
+				fprintf(configfile, "\t%d", rom.read8());//split3
+				fprintf(configfile, "\t%d", rom.read8());//release
+
+				/*get the envelope pointer and set the envelope bankpointer position*/
+				var = rom.read32();
+
+				/*get the data pointer and pitches for later*/
+				dataptr1 = rom.read32();
+				pitch1= rom.read32();
+				dataptr2 = rom.read32();
+				pitch2 = rom.read32();
+				dataptr3 = rom.read32();
+				pitch3 = rom.read32();
+
+				/*go to the envelope and add info to file*/
+				rom.seek(TBL_AUDIOBANK_FILE + bankpointer + var);
+				fprintf(configfile, "\t%d", rom.read16());//attackrate
+				fprintf(configfile, "\t%d", rom.read16());//attacklevel
+				fprintf(configfile, "\t%d", rom.read16());//decay1rate
+				fprintf(configfile, "\t%d", rom.read16());//decay1level
+				fprintf(configfile, "\t%d", rom.read16());//decay2rate
+				fprintf(configfile, "\t%d\n", rom.read16());//decay2level
+
+				/*write the second teir column names for the config file*/
+				fprintf(configfile, "sample1\tpitch1  \tsample2\tpitch2  \tsample3\tpitch3  \n");
+				
+				/*got to the samples folder*/	
+				dir_leave();
+				dir_leave();
+				dir_leave();
+				dir_enter("audiotable");
+				dir_enter(VANILLA);
+				dir_enter("_deleteme");
+				
+				/*check if data exists before creating the data file*/
+				if (dataptr1)
+				{
+					/*seek to the data pointer and write the sample's length, address, and pitch to the file*/
+					rom.seek(TBL_AUDIOBANK_FILE + bankpointer + dataptr1);
+					rom.seek_cur(2);
+					samplelength = rom.read16();
+					sample = rom.read32()+sampleoffset;
+					fprintf(configfile, "%X\t%X\t",sample,pitch1);
+
+					dosample(rom, sample, samplelength, &samplelist, &samplenum, name2, bankpointer);
+				}
+				else
+				{	
+					/*if there's no data file write in zeroes into the config file*/
+					fprintf(configfile, "NULL\tNULLNULL\t");
+				}
+				/*check if data exists before creating the data file*/
+				if (dataptr2)
+				{
+					/*seek to the data pointer and write the sample's length, address, and pitch to the file*/
+					rom.seek(TBL_AUDIOBANK_FILE + bankpointer + dataptr2);
+					rom.seek_cur(2);
+					samplelength = rom.read16();
+					sample = rom.read32()+sampleoffset;
+					fprintf(configfile, "%X\t%X\t", sample,pitch2);
+
+					dosample(rom, sample, samplelength, &samplelist, &samplenum, name2, bankpointer);
+				}
+				else
+				{	
+					/*if there's no data file write in zeroes into the config file*/
+					fprintf(configfile, "NULL\tNULLNULL\t");
+				}
+
+				/*check if data exists before creating the data file*/
+				if (dataptr3)
+				{
+					/*seek to the data pointer and write the sample's length, address, and pitch to the file*/
+					rom.seek(TBL_AUDIOBANK_FILE + bankpointer + dataptr3);
+					rom.seek_cur(2);
+					samplelength = rom.read16();
+					sample = rom.read32()+sampleoffset;
+					fprintf(configfile, "%X\t%X\t", sample,pitch3);
+
+					dosample(rom, sample, samplelength, &samplelist, &samplenum, name2, bankpointer);
+			
+				}
+				else
+				{	
+					/*if there's no data file write in zeroes into the config file*/
+					fprintf(configfile, "NULL\tNULLNULL\t");
+				}
+				dir_leave();
+				dir_leave();
+				dir_leave();
+				dir_enter("banks");
+				dir_enter(VANILLA);
+				dir_enter(name);
+
+				/*close the instrument config file and leave the folder*/
+				fclose(configfile);
+			}
+
+			/*count up the instruments*/
+			instrumentindex++;
+		}
+		oldsample = -1;
+		/*checks if there are drums and then writes them*/
+		if (drums>0 && index !=1)
+		{
+
+			/*seeks to drum-index pointer list and reads first drum index*/
+			rom.seek(TBL_AUDIOBANK_FILE + bankpointer + drums);
+			var = rom.read32();
+			
+			/* writes all the drum indexes*/
+			rom.seek(TBL_AUDIOBANK_FILE + bankpointer + var);
+			while (var < drums) 
+			{
+			rom.seek_cur(1);
+			var++;
+			}
+
+			/*steps back to read the envelope pointer*/
+			rom.seek_cur(-4);
+			var = rom.read32();
+
+			/*open the config file and write the header*/
+			configfile = fopen("_drums.tsv","wb");
+			fprintf(configfile, "atkrate\tatklvl\tdcy1rt\tdcy1lvl\tdcy2rt\tdcy2lvl\n");
+
+			/*go to the envelope and add info to file*/
+			rom.seek(TBL_AUDIOBANK_FILE + bankpointer + var);
+			fprintf(configfile, "%d", rom.read16());//attackrate
+			fprintf(configfile, "\t%d", rom.read16());//attacklevel
+			fprintf(configfile, "\t%d", rom.read16());//decay1rate
+			fprintf(configfile, "\t%d", rom.read16());//decay1level
+			fprintf(configfile, "\t%d", rom.read16());//decay2rate
+			fprintf(configfile, "\t%d\n", rom.read16());//decay2level
+
+			/*sets var to 1st drum index pointer*/
+			rom.seek(TBL_AUDIOBANK_FILE + bankpointer + drums);
+			var = rom.read32();
+			
+			/*write the second teir column names for the config file*/
+			fprintf(configfile, "sample\tpitch\tunknown\t\t\t\n");
+
+			/*leave audiobank and go to sample folder*/
+			dir_leave();
+			dir_leave();
+			dir_leave();
+			dir_enter("audiotable");
+			dir_enter(VANILLA);
+			dir_enter("_deleteme");
+
+			/*finds all the unique drum data structures*/
+			instrumentindex = 0;
+			while (var < drums) 
+			{
+				/*goes to the drum index and finds the data-structure offset*/
+				rom.seek(TBL_AUDIOBANK_FILE + bankpointer + var);
+				pitch2 = rom.read32();
+				var2 = rom.read32();
+				pitch1 = rom.read32();
+
+				/*seek to the data pointer and write the sample's length, address, and pitch to the file*/
+				rom.seek(TBL_AUDIOBANK_FILE + bankpointer + var2);
+				rom.seek_cur(2);
+				samplelength = rom.read16();
+				sample = rom.read32()+sampleoffset;	
+				fprintf(configfile, "%X\t%X\t%X\t\t\t\n",sample,pitch1,pitch2);
+				if (sample != oldsample)
+				{nameindex2++;}
+				oldsample = sample;
+				sscanf(tsv_col_row(g_tsv,"drums-sfx",nameindex2), "%s", name2);
+
+				dosample(rom, sample, samplelength, &samplelist, &samplenum, name2, bankpointer);
+			
+				var = var + 16;
+			}
+
+			/*return to the banks*/
+			dir_leave();
+			dir_leave();
+			dir_leave();
+			dir_enter("banks");
+			dir_enter(VANILLA);
+			dir_enter(name);
+	
+			/*close drum file */
+			fclose(configfile);
+			
+		}
+		/*check if there are sound effects*/
+		if (sfx > 0)
+		{
+			/*enters sfx folder*/
+			configfile = fopen("_soundeffects.tsv","wb");
+			fprintf(configfile, "sample\tpitch\n");
+
+			/*go to audiotable to write the sample data*/
+			dir_leave();
+			dir_leave();
+			dir_leave();
+			dir_enter("audiotable");
+			dir_enter(VANILLA);
+			dir_enter("_deleteme");
+
+			/*writes all the sound effects to file by reading till the end of the soundbank*/
+			var = 0;
+			while (var < sfxnum)
+			{
+				/*go to the index and get the pointer to the data-sructure*/
+				rom.seek(TBL_AUDIOBANK_FILE + bankpointer + sfx + var*8);
+				var2 = rom.read32();
+				pitch1 = rom.read32();
+
+				/*check if it's a valid pointer before creating a file*/
+				if (var2 > 0 && var2 < length)
+				{
+					/*write the sample and pitch to the sfx file*/
+					rom.seek(TBL_AUDIOBANK_FILE + bankpointer + var2);
+					rom.seek_cur(2);
+					samplelength = rom.read16();
+					sample = rom.read32()+sampleoffset;
+					fprintf(configfile, "%X\t%X\n",sample, pitch1);
+
+					nameindex2++;
+					sscanf(tsv_col_row(g_tsv,"drums-sfx",nameindex2), "%s", name2);
+					dosample(rom, sample, samplelength, &samplelist, &samplenum, name2, bankpointer);
+			
+				}
+				else
+				{
+					fprintf(configfile, "%X\t%X\n",sample, pitch1);
+				}
+
+				/*advance one sound effect index*/
+				var++;
+			}
+
+			/*close the sfx file and return to the bank folder*/
+			fclose(configfile);
+			dir_leave();
+			dir_leave();
+			dir_leave();
+			dir_enter("banks");
+			dir_enter(VANILLA);
+			dir_enter(name);	
+		}
+
+		/*leave the audiobank folder and advance to next bank*/
+		dir_leave();
+		index++;
+		//printf("\n%s\n", samplelist);
+	}
+
+	/*extract final bank for building. I'm not sure what this data-does but it should be placed at the end of the data-banks before empty space*/
+	rom.seek(TBL_AUDIOBANK + 16 + index*16);
+	bankpointer = rom.read32();
+	length = rom.read32();
+	rom.extract(".do_not_delete", TBL_AUDIOBANK_FILE + bankpointer, TBL_AUDIOBANK_FILE + bankpointer + length);
+
+	/*leave the audio and audiobank and vanilla folders*/
+	dir_leave();
+	dir_leave();
+	dir_leave();
+
+	/*keep console update on a new line*/
+	printf("success!\n");
+}
+
+
+void
+audioseq(struct rom *rom)
+{	
+	FILE *fp;
+	int numberofsequences;
+	int index;
+	int start;
+	int sequenceinstrumentpointer;
+	int var;
+	int length;
+	int type;
+	int name;
+	int name2;
+
+	/*message console*/
+	printf("audioseq... ");
+
+	/*allocate memory for name*/
+	name = malloc(256);
+	name2 = malloc(256);
+
+	/*enter audio folder*/
+	dir_enter("audio");
+	/*enter sequences folder to write sequence data and then leave*/
+	dir_enter("sequences");
+	dir_enter(VANILLA);
+
+	/*seek to sequence table header and read sequence number*/
+	rom.seek(TBL_AUDIOSEQ);
+	numberofsequences = rom.read16();
+
+	/*open table for editing*/
+	fp = fopen("sequencetable.tsv","wb");
+
+	/*print header*/
+	fprintf(fp, "%s", "index\tstart\tlength\ttype\tbank\n");
+
+	/*read the whole table using numberofsequences*/
+	index = 0;
+	while (index < numberofsequences)
+	{
+		/*seek to table entry to read sequence info*/
+		rom.seek(TBL_AUDIOSEQ + 16 + index*16);
+		start = rom.read32();
+		length = rom.read32();
+		rom.seek_cur(1);
+		type = rom.read8();
+
+		/*write to table*/
+		fprintf(fp, "0x%04X", index);
+		fprintf(fp, "\t%X", start);
+		fprintf(fp, "\t%X", length);
+		fprintf(fp, "\t%X", type);
+
+
+		/*read and write what bank each sequence uses(i did away with multiple banks per sequence)*/
+		rom.seek(TBL_SEQUENCEINSTRUMENTSET + index*2);
+		sequenceinstrumentpointer = rom.read16();
+		rom.seek(TBL_SEQUENCEINSTRUMENTSET + sequenceinstrumentpointer + 1);
+		var = rom.read8();
+		fprintf(fp, "\t%X\n", var);
+
+		/*get the name of the sequence and dump the file*/
+		if (g_tsv)
+		{sscanf(tsv_col_row(g_tsv,"sequence",index + 1), "%s", name2);
+		sprintf(name,"%d - %s - %X.bin",index,name2,index);}
+		else
+		{sprintf(name,"%d - sequence.bin",index);}
+
+		rom.extract(name, TBL_SEQUENCE_FILE + start, TBL_SEQUENCE_FILE + start+length);
+
+		/*advance forward in table*/
+		index ++;
+	}
+
+	/*close table and leave folder*/
+	dir_leave();
+	dir_leave();
+	fclose(fp);
+	dir_leave();
+	printf("success!\n");
 }
 
 void
@@ -383,24 +1382,22 @@ route(struct rom *rom)
 	int scene;
 	int spawn;
 	int var;
-	int sep;
-	
-	/* separator whitespace */
-	sep = 8;
-	
+
+		/*message console*/
+	printf("route... ");
+
+	/*enter folder*/
+	dir_enter("scene");
+	dir_enter(VANILLA);
+		
 	/* open route.txt for writing */
-	fp = fopen("route.txt", "wb");
+	fp = fopen("route.tsv", "wb");
 		
 	/* print table header */
-	fprintf(fp, "%-*s", sep, "index");
-	fprintf(fp, "%-*s", sep, "scene");
-	fprintf(fp, "%-*s", sep, "spawn");
-	fprintf(fp, "%-*s", sep, "music");
-	fprintf(fp, "%-*s", sep, "title");
-	fprintf(fp, "%-*s", sep, "fadein");
-	fprintf(fp, "%-*s", sep, "fadeout");
+	fprintf(fp, "%s", "index\tscene\tspawn\tmusic\ttitle\tfadein\tfadeout");
 	fprintf(fp, "\n");
 	
+	/*populate table*/
 	index = 0;
 	while (index < TBL_ROUTE_ENTRIES)
 	{
@@ -420,20 +1417,218 @@ route(struct rom *rom)
 		
 		/* print table entry */
 		fprintf(fp, "0x%04X", index);
-		fprintf(fp, "%*d", sep, scene);
-		fprintf(fp, "%*d", sep, spawn);
-		fprintf(fp, "%*s", sep, music);
-		fprintf(fp, "%*s", sep, card);
-		fprintf(fp, "%*d", sep, fadein);
-		fprintf(fp, "%*d", sep, fadeout);
+		fprintf(fp, "\t%X", scene);
+		fprintf(fp, "\t%d", spawn);
+		fprintf(fp, "\t%s", music);
+		fprintf(fp, "\t%s", card);
+		fprintf(fp, "\t%d", fadein);
+		fprintf(fp, "\t%d", fadeout);
 		fprintf(fp, "\n");
 		
 		/* advance to next entry */
 		index++;
 	}
 	
+	/*close file and leave folder*/
 	fclose(fp);
+	dir_leave();
+	dir_leave();
+	printf("success!\n");
 }
+
+void
+entrancecutscene(struct rom *rom)
+{
+	FILE *fp;
+	int index;
+	int entrance;
+	int age;
+	int *agestr;
+	int flag;
+	int offset;
+	int sep;
+
+	/*message console*/
+	printf("entrancecutscene... ");
+
+	/*enter scene folder*/
+	dir_enter("scene");
+	dir_enter(VANILLA);
+
+	/*set up age array*/
+	agestr = int_array(3, "child", "adult", "both");
+	
+	/* separator whitespace */
+	sep = 16;
+	
+	/* open entrancecutscene.txt for writing */
+	fp = fopen("entrancecutscene.tsv", "wb");
+		
+	/* print table header */
+	fprintf(fp,  "%s", "index\tentry\tage\tflag\toffset");
+	fprintf(fp, "\n");
+	
+	/* populate table */
+	index = 0;
+	while (index < TBL_ENTRANCECUTSCENE_ENTRIES)
+	{
+		/* go to table entry */
+		rom.seek(TBL_ENTRANCECUTSCENE + index * 8);
+		
+		/* parse table entry */
+		entrance = rom.read16();
+		age = rom.read8();
+		flag = rom.read8();
+		offset   = rom.read32();
+
+		
+		/* print table entry */
+		fprintf(fp, "0x%04X", index);
+		fprintf(fp, "\t%X", entrance);
+		fprintf(fp, "\t%s", agestr[age]);		
+		fprintf(fp, "\t%X", flag);
+		fprintf(fp, "\t%X", offset);
+		fprintf(fp, "\n");
+		
+		/* advance to next entry */
+		index++;
+	}
+	
+	/*close file and exit folder*/
+	fclose(fp);
+	dir_leave();
+	dir_leave();
+	printf("success!\n");
+}
+
+
+
+void
+restrictionflag(struct rom *rom)
+{
+	FILE *fp;
+	int index;
+	int variable;
+	int name1;
+	int name2;
+	int sceneid;
+	int xx;
+	int yy;
+	int zz;
+
+	/*message the console*/
+	printf("restrictionflag... ");
+	
+	/* open directory and open entrancecutscene.txt for writing */
+	dir_enter("scene");
+	dir_enter(VANILLA);
+	fp = fopen("restrictionflag.tsv", "wb");
+		
+	/* print table header */
+	fprintf(fp, "%s","index");
+	fprintf(fp, "%s", "\tscene\tbottle\tabutton\tbbutton\thealth\twarpson\tocarina\thooksht\ttradeit\tglobal\tdinnayr\tfarore\tsunsong");
+	fprintf(fp, "\n");
+	
+	/*populate table*/
+	index = 0;
+	while (index < TBL_RESTRICTIONFLAG_ENTRIES)
+	{
+		/* go to table entry */
+		rom.seek(TBL_RESTRICTIONFLAG + index * 4);
+		
+		/* parse table entry */
+		sceneid = rom.read8();
+		xx = rom.read8();
+		yy = rom.read8();
+		zz   = rom.read8();
+
+		/* print table entry (uses bit-test for flags)*/
+		fprintf(fp, "0x%04X", index);
+		fprintf(fp, "\t%X", sceneid);
+		if (xx & (1 << 1)) {name1 = "three"; name2 = "two";}else{name1 = "true"; name2 = "false";}
+		fprintf(fp, "\t%s", (xx & (1 << 0)) ? name1 : name2);
+		if (xx & (1 << 3)) {name1 = "three"; name2 = "two";}else{name1 = "true"; name2 = "false";}
+		fprintf(fp, "\t%s", (xx & (1 << 2)) ? name1 : name2);
+		if (xx & (1 << 5)) {name1 = "three"; name2 = "two";}else{name1 = "true"; name2 = "false";}
+		fprintf(fp, "\t%s", (xx & (1 << 4)) ? name1 : name2);
+		if (xx & (1 << 7)) {name1 = "three"; name2 = "two";}else{name1 = "true"; name2 = "false";}
+		fprintf(fp, "\t%s", (xx & (1 << 6)) ? name1 : name2);
+		if (yy & (1 << 1)) {name1 = "three"; name2 = "two";}else{name1 = "true"; name2 = "false";}
+		fprintf(fp, "\t%s", (yy & (1 << 0)) ? name1 : name2);
+		if (yy & (1 << 3)) {name1 = "three"; name2 = "two";}else{name1 = "true"; name2 = "false";}
+		fprintf(fp, "\t%s", (yy & (1 << 2)) ? name1 : name2);
+		if (yy & (1 << 5)) {name1 = "three"; name2 = "two";}else{name1 = "true"; name2 = "false";}
+		fprintf(fp, "\t%s", (yy & (1 << 4)) ? name1 : name2);
+		if (yy & (1 << 7)) {name1 = "three"; name2 = "two";}else{name1 = "true"; name2 = "false";}
+		fprintf(fp, "\t%s", (yy & (1 << 6)) ? name1 : name2);	
+		if (zz & (1 << 1)) {name1 = "three"; name2 = "two";}else{name1 = "true"; name2 = "false";}
+		fprintf(fp, "\t%s", (zz & (1 << 0)) ? name1 : name2);
+		if (zz & (1 << 3)) {name1 = "three"; name2 = "two";}else{name1 = "true"; name2 = "false";}
+		fprintf(fp, "\t%s", (zz & (1 << 2)) ? name1 : name2);
+		if (zz & (1 << 5)) {name1 = "three"; name2 = "two";}else{name1 = "true"; name2 = "false";}
+		fprintf(fp, "\t%s", (zz & (1 << 4)) ? name1 : name2);
+		if (zz & (1 << 7)) {name1 = "three"; name2 = "two";}else{name1 = "true"; name2 = "false";}
+		fprintf(fp, "\t%s", (zz & (1 << 6)) ? name1 : name2);		
+		fprintf(fp, "\n");
+		
+		/* advance to next entry */
+		index++;
+	}
+	/*close file and leave directory */
+	fclose(fp);
+	dir_leave();
+	dir_leave();
+	printf("success!\n");
+}
+
+void
+message(struct rom *rom)
+{ 
+	FILE *fp;
+	int message_data_end;
+	int index;
+	
+	/*display message in console*/
+	printf("message... ");
+
+	/*open directory*/
+	dir_enter("messages");
+	dir_enter(VANILLA);
+	
+	/*extract tables for both text editors */
+	if (IS_DEBUG)
+	{rom.extract("table.bin",TBL_MESSAGE, TBL_MESSAGE + TBL_MESSAGE_ENTRIES*8);}
+	else
+	{	/*we have to extract the japanese table in 1.0 to be compatible with zelda's letter*/
+		rom.extract("table.bin",TBL_MESSAGE - 0x4140, TBL_MESSAGE + TBL_MESSAGE_ENTRIES*8);
+	}
+
+	rom.extract("MessageTable.tbl",TBL_MESSAGE, TBL_MESSAGE + TBL_MESSAGE_ENTRIES*8);
+	
+	/*find the length of the english data*/
+	rom.seek(TBL_MESSAGE + TBL_MESSAGE_ENTRIES*8 - 3);
+	message_data_end   = rom.read24();
+	if (!strcmp(VANILLA, "_vanilla-1.0"))
+	{message_data_end = 0x38130;}
+
+	/*extract the data*/
+	if (IS_DEBUG)
+	{
+		rom.extract("0_message_data_static.bin",TBL_MESSAGE_DATA, TBL_MESSAGE_DATA + message_data_end);
+	    rom.extract("StringData.bin",TBL_MESSAGE_DATA, TBL_MESSAGE_DATA + message_data_end);
+	}
+	else
+	{
+		rom.extract("1_message_data_static.bin",TBL_MESSAGE_DATA, TBL_MESSAGE_DATA + TBL_MESSAGE_DATA_SIZE);
+	    rom.extract("StringData.bin",TBL_MESSAGE_DATA, TBL_MESSAGE_DATA + TBL_MESSAGE_DATA_SIZE);
+	}
+
+	/*exit the directory*/
+	dir_leave();
+	dir_leave();
+	printf("success!\n");
+}
+
 
 void
 scene(struct rom *rom)
@@ -462,6 +1657,7 @@ scene(struct rom *rom)
 	
 	/* enter and parse folder */
 	dir_enter("scene");
+	dir_enter(VANILLA);
 	
 	/* repeats for every item in the list */
 	index = 0;
@@ -471,12 +1667,10 @@ scene(struct rom *rom)
 		printf("\r""scene %d/%d: ", index, TBL_SCENE_ENTRIES - 1);
 		
 		/* create and enter directory */
-		dir_enter(
-			dir_mkname(
-				index
-				, tsv_col_row(g_tsv, "scene", index + 1)
-			)
-		);
+		if (g_tsv)
+		{dir_enter(dir_mkname(index, tsv_col_row(g_tsv, "scene", index + 1)));}
+		else
+		{dir_enter(dir_mkname(index,"scene"));}
 		
 		/* go to table entry */
 		rom.seek(TBL_SCENE + index * 20);
@@ -561,19 +1755,21 @@ scene(struct rom *rom)
 		
 		/* write table settings to conf.txt */
 		fp = fopen("conf.txt", "wb");
-		fprintf(fp, "unk_a        %d\n", unk_a);
-		fprintf(fp, "unk_b        %d\n", unk_b);
-		fprintf(fp, "shader       %d\n", rinit);
+		fprintf(fp, "unk-a %d\n", unk_a);
+		fprintf(fp, "unk-b %d\n", unk_b);
+		fprintf(fp, "shader %d\n", rinit);
 		fclose(fp);
 		
 		/* leave directory */
 		dir_leave();
+
 		
 		/* advance to next entry */
 		index++;
 	}
 	
 	/* cleanup */
+	dir_leave();
 	dir_leave();
 	free(room_name);
 	free(title_buf);
@@ -593,6 +1789,7 @@ particle(struct rom *rom)
 	
 	/* enter and parse folder */
 	dir_enter("particle");
+	dir_enter(VANILLA);
 	
 	/* repeats for every item in the list */
 	index = 0;
@@ -601,13 +1798,12 @@ particle(struct rom *rom)
 		/* display progress */
 		printf("\r""particle %d/%d: ", index, TBL_PARTICLE_ENTRIES - 1);
 		
+
 		/* create and enter directory */
-		dir_enter(
-			dir_mkname(
-				index
-				, tsv_col_row(g_tsv, "particle", index + 1)
-			)
-		);
+		if (g_tsv)
+		{dir_enter(dir_mkname(index, tsv_col_row(g_tsv, "particle", index + 1)));}
+		else
+		{dir_enter(dir_mkname(index,"particle"));}
 		
 		/* go to table entry */
 		rom.seek(TBL_PARTICLE + index * 28);
@@ -653,6 +1849,7 @@ particle(struct rom *rom)
 	
 	/* cleanup */
 	dir_leave();
+	dir_leave();
 	printf("success!\n");
 }
 
@@ -671,7 +1868,11 @@ actor(struct rom *rom)
 	
 	/* enter and parse folder */
 	dir_enter("actor");
-	
+	dir_enter(ACTOR_FOLDER);
+	dir_leave();
+	dir_enter(VANILLA);
+
+
 	/* repeats for every item in the list */
 	index = 0;
 	while (index < TBL_ACTOR_ENTRIES)
@@ -702,7 +1903,7 @@ actor(struct rom *rom)
 		else if (naddr)
 			name = rom.raw((naddr - VRAM_CODE) + VROM_CODE);
 		else
-			name = 0;
+			name = "blank";
 		
 		/* create and enter directory */
 		dir_enter(dir_mkname(index, name));
@@ -743,6 +1944,7 @@ actor(struct rom *rom)
 	
 	/* cleanup */
 	dir_leave();
+	dir_leave();
 	printf("success!\n");
 }
 
@@ -755,6 +1957,7 @@ object(struct rom *rom)
 	
 	/* enter and parse folder */
 	dir_enter("object");
+	dir_enter(VANILLA);
 	
 	/* repeats for every item in the list */
 	index = 0;
@@ -763,13 +1966,12 @@ object(struct rom *rom)
 		/* display progress */
 		printf("\r""object %d/%d: ", index, TBL_OBJECT_ENTRIES - 1);
 		
+		
 		/* create and enter directory */
-		dir_enter(
-			dir_mkname(
-				index
-				, tsv_col_row(g_tsv, "object", index + 1)
-			)
-		);
+		if (g_tsv)
+		{dir_enter(dir_mkname(index, tsv_col_row(g_tsv, "object", index + 1)));}
+		else
+		{dir_enter(dir_mkname(index,"object"));}
 		
 		/* go to table entry */
 		rom.seek(TBL_OBJECT + index * 8);
@@ -790,26 +1992,95 @@ object(struct rom *rom)
 	
 	/* cleanup */
 	dir_leave();
+	dir_leave();
 	printf("success!\n");
+}
+
+int
+extrasystem(struct rom *rom)
+{
+	FILE *fp;
+	int *data;
+	int var;
+
+	dir_enter("system");
+
+	dir_enter("code");
+	dir_enter(VANILLA);
+	rom.extract("code.bin", VROM_CODE, VROM_CODE + VROM_CODE_SIZE);
+	dir_leave();
+	dir_leave();
+
+
+	/*dumps n_rogo*/
+	dir_enter("ovl_title");
+	dir_enter(VANILLA);
+	rom.extract("nintendo_rogo_static.zobj", N_ROGO, N_ROGO + N_ROGO_SIZE);
+	dir_leave();
+	dir_leave();
+	dir_leave();
 }
 
 int
 main(int argc, char **argv)
 {
 	struct rom *rom;
+	struct conf *config;
 	char *name;
 	FILE *fp;
-	
+
+	/*if config doesn't exist it'll create on for ya*/
+	if (!file_exists("config.tsv"))
+	{
+		printf("created new config file for project\n");
+		fp = fopen("config.tsv", "wb");
+		fprintf(fp, "configuration_name\tsetting\tconfiguration_note\n");
+		fprintf(fp, "using_oot_debug_rom\ttrue\t(true = debug, false = 1.0)\n");
+		fprintf(fp, "use_hex_naming_style\tfalse\t(true = index in hex when dumping)\n");
+		fprintf(fp, "using_zelda's_letter\ttrue\t(true = zelda's letter, false = ocarina text editor)\n");
+		fprintf(fp, "use_map_select_hack\ttrue\t(english map_select using mapselect.tsv and scene names)\n");
+		fprintf(fp, "build/dump audio\ttrue\t(optional if you don't plan on doing audio stuff)\n");
+		fprintf(fp, "build cached audio\tfalse\t(locks current audio state to increase build speed)\n");
+		fprintf(fp, "extend ram fix bugs\ttrue\t(patches the rom just like sharp ocarina)");
+		fclose(fp);
+	}
+
+	/*load the config file*/
+	config = loadfile("config.tsv",0,0);
+
 	/* name of rom */
 	/* NOTE: the rom of the given name must exist *
 	 *       in the same directory as this .rtl   */
-	name = "baserom.z64";
+	if (!strcmp(tsv_col_row(config, "setting", 1), "true"))
+	{
+		printf("DUMPING OOT-DEBUG...\n");
+		debugvariables();
+		name = "oot-debug.z64";
+		VANILLA = "_vanilla-debug";
+		ACTOR_FOLDER = "_custom-debug";
+
+	}
+	else
+	{
+		printf("DUMPING OOT-1.0...\n");
+		ocarinaoftimevariables();
+		name = "baserom.z64";
+		VANILLA = "_vanilla-1.0";
+		ACTOR_FOLDER = "_custom-1.0";
+	}
 	
 	/* initialize name lists */
 	g_tsv = loadfile("oot_names.tsv", 0, true/*file is optional*/);
 	
 	/* folder naming style */
-	dir_use_style("pre");
+	if (!strcmp(tsv_col_row(config, "setting", 2), "true"))
+	{
+		dir_use_style("preX");
+	}
+	else
+	{
+		dir_use_style("pre");
+	}
 	
 	/* load rom */
 	rom = rom.new(name);
@@ -817,22 +2088,36 @@ main(int argc, char **argv)
 	/* dma table (dmadata) offset and number of entries */
 	rom.dma(TBL_DMA, TBL_DMA_ENTRIES);
 	
-	/* dump rom */
+	/* dump rom skipping audio if selected*/
+	extrasystem(rom);
+	
 	systemdir(rom);
 	object(rom);
 	actor(rom);
 	particle(rom);
 	scene(rom);
+	if (!strcmp(tsv_col_row(config, "setting", 5), "true"))
+	{
+		audiobank(rom);
+		audiotable(rom);
+		audioseq(rom);
+	}
 	route(rom);
+	entrancecutscene(rom);
+	message(rom);
+	restrictionflag(rom);
 	
 	/* create .zzrpl */
 	name = rom.filename();
-	fp = fopen("project.zzrpl", "wb");
+	if (!strcmp(tsv_col_row(config, "setting", 1), "true"))
+	{fp = fopen("project-debug.zzrpl", "wb");}
+	else
+	{fp = fopen("project-1.zzrpl", "wb");}
 	fprintf(fp, "zzrtl                   v0.01\n");
 	fprintf(fp, "baserom                 \"%s\"\n", name);
 	/* zzplayas support */
 	fprintf(fp, "ZZPLAYAS_VROM_CODE      \"'%s'+0x%08X\"\n", name, VROM_CODE);
-	fprintf(fp, "ZZPLAYAS_VROM_PLAYER    \"'system/overlay/ovl_player_actor/ovl_player_actor.zovl'\"\n");
+	fprintf(fp, "ZZPLAYAS_VROM_PLAYER    \"'system/ovl_player_actor/%s/ovl_player_actor.zovl'\"\n", VANILLA);
 	fclose(fp);
 	
 	/* cleanup */

@@ -17,6 +17,7 @@
   "main": "index.js",
   "devDependencies": {},
   "scripts": {
+    "postinstall": "gulp install",
     "build": "gulp build"
   },
   "repository": {

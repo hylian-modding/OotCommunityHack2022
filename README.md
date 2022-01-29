@@ -18,3 +18,11 @@ yarn
 ## Building
 
 yarn build
+
+## Distribution
+
+yarn dist
+
+## Testing
+
+yarn test

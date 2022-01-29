@@ -125,7 +125,7 @@ function compileSceneAndRoom(z64hdr: string, entry: string){
         try{
             let isScene: boolean = false;
             console.log(`Compiling ${path.parse(file).base}...`);
-            child_process.execSync(`mips64-gcc -std=gnu11 -mtune=vr4300 -march=vr4300 -mabi=32 -mips3 -mno-shared -mdivide-breaks -mno-explicit-relocs -mno-memcpy -mno-check-zero-division -ffreestanding -fno-reorder-blocks -w -I${z64hdr} -D_LANGUAGE_C -G 0 -O0 -c ./${path.parse(file).base}`);
+            child_process.execSync(`mips64-gcc -fno-zero-initialized-in-bss -std=gnu11 -mtune=vr4300 -march=vr4300 -mabi=32 -mips3 -mno-shared -mdivide-breaks -mno-explicit-relocs -mno-memcpy -mno-check-zero-division -ffreestanding -fno-reorder-blocks -w -I${z64hdr} -D_LANGUAGE_C -G 0 -O0 -c ./${path.parse(file).base}`);
             child_process.execSync(`mips64-ld -L./ -T entry.ld --emit-relocs -o ${path.parse(file).name}.elf ${path.parse(file).name}.o`);
             let dump = child_process.execSync(`mips64-objdump -t -C -r -w --special-syms ${path.parse(file).name}.elf`).toString();
             let arr = findLines(dump, "O .data");
@@ -161,6 +161,7 @@ function compileSceneAndRoom(z64hdr: string, entry: string){
             if (padding > 0){
                 console.log(`Added 0x${padding.toString(16)} bytes of padding for alignment.`);
             }
+            fs.writeFileSync(`./${out}`, sb.toBuffer());
             fs.unlinkSync(`./${path.parse(file).name}.o`);
             fs.unlinkSync(`./${path.parse(file).name}.elf`);
         }catch(err){

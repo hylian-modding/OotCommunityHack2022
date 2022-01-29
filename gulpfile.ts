@@ -1,8 +1,11 @@
 import gulp from 'gulp';
 import fs from 'fs-extra';
 import child_process from 'child_process';
-import AdmZip from 'adm-zip';
 import path from 'path';
+import { SmartBuffer } from 'smart-buffer';
+
+const PROJECT_NAME: string = "HMCommunity2022";
+const PROJECT_HEADER: Buffer = Buffer.from('48594C49414E4D4F4444494E47434F4D4D554E4954593230323200', 'hex');
 
 const N0: string = "CZLE";
 const DEBUG: string = "NZLE";
@@ -24,6 +27,25 @@ function setID() {
         console.log("Unknown rom version!");
     }
 }
+
+gulp.task('clean', function(){
+    let og = process.cwd();
+    process.chdir("./assets");
+    if (fs.existsSync("./build.z64")){
+        fs.unlinkSync("./build.z64");
+    }
+    if (fs.existsSync("./build-yaz.z64")){
+        fs.unlinkSync("./build-yaz.z64");
+    }
+    if (fs.existsSync(`./${PROJECT_NAME}.z64`)){
+        fs.unlinkSync(`./${PROJECT_NAME}.z64`);
+    }
+    if (fs.existsSync(`./${PROJECT_NAME}.bps`)){
+        fs.unlinkSync(`./${PROJECT_NAME}.bps`);
+    }
+    process.chdir(og);
+    return gulp.src('.');
+});
 
 gulp.task('install', function () {
     try {
@@ -57,36 +79,192 @@ gulp.task('install', function () {
     return gulp.src('.');
 });
 
-gulp.task('_build', function () {
-    setID();
-    let zip = new AdmZip();
+function findLines(input: string, pattern: string, arr: string[] = []){
+    let lines = input.split("\n");
+    for (let i = 0; i < lines.length; i++){
+        if (lines[i].indexOf(pattern) > -1){
+            arr.push(lines[i]);
+        }
+    }
+    return arr;
+}
+
+function findAllFiles(dir: string, ext: string){
+    let arr: string[] = [];
+    fs.readdirSync(dir).forEach((f: string)=>{
+        let file: string = path.resolve(dir, f);
+        if (fs.existsSync(file)){
+            if (fs.lstatSync(file).isDirectory()) return;
+            if (path.parse(file).ext === ext){
+                arr.push(file);
+            }
+        }
+    });
+    return arr;
+}
+
+function compileSceneAndRoom(z64hdr: string, entry: string){
+    fs.copyFileSync(path.resolve(path.parse(entry).dir, "entry_default.ld"), "./entry.ld");
+
+    let files = findAllFiles(".", ".c");
+    let scene_index = -1;
+    for (let i = 0; i < files.length; i++){
+        if (files[i].indexOf("scene") > -1){
+            scene_index = i;
+        }
+    }
+    if (files.length > 0){
+        console.log(`Processing fast64 files found in ${path.parse(process.cwd()).name}`);
+        let scene = files.splice(scene_index, 1);
+        files.unshift(...scene);
+    }else{
+        return;
+    }
+
+    files.forEach((file: string)=>{
+        try{
+            let isScene: boolean = false;
+            console.log(`Compiling ${path.parse(file).base}...`);
+            child_process.execSync(`mips64-gcc -std=gnu11 -mtune=vr4300 -march=vr4300 -mabi=32 -mips3 -mno-shared -mdivide-breaks -mno-explicit-relocs -mno-memcpy -mno-check-zero-division -ffreestanding -fno-reorder-blocks -w -I${z64hdr} -D_LANGUAGE_C -G 0 -O0 -c ./${path.parse(file).base}`);
+            child_process.execSync(`mips64-ld -L./ -T entry.ld --emit-relocs -o ${path.parse(file).name}.elf ${path.parse(file).name}.o`);
+            let dump = child_process.execSync(`mips64-objdump -t -C -r -w --special-syms ${path.parse(file).name}.elf`).toString();
+            let arr = findLines(dump, "O .data");
+            findLines(dump, "O .bss", arr);
+            if (path.parse(file).base.indexOf("scene") > -1){
+                console.log("Generating linker script for rooms from scene...");
+                let entry = fs.readFileSync("./entry.ld").toString();
+                entry = entry.replace(". = 0x02000000;", ". = 0x03000000;");
+                entry += "\n";
+                arr.forEach((e: string)=>{
+                    let s = e.split(" ");
+                    let offset = parseInt(s[0], 16);
+                    let symbol = s[s.length - 1];
+                    entry += `${symbol} = 0x${offset.toString(16)};\n`;
+                });
+                fs.writeFileSync("./entry.ld", entry);
+                isScene = true;
+            }
+            let ext = ".zmap";
+            if (isScene){
+                ext = ".zscene";
+            }
+            let out = `${path.parse(file).name}${ext}`;
+            child_process.execSync(`mips64-objcopy -O binary ${path.parse(file).name}.elf ${out}`);
+            let _o = fs.readFileSync(`./${out}`);
+            let sb = new SmartBuffer();
+            sb.writeBuffer(_o);
+            let padding: number = 0;
+            while (sb.length % 0x10 !== 0){
+                sb.writeUInt8(0);
+                padding++;
+            }
+            if (padding > 0){
+                console.log(`Added 0x${padding.toString(16)} bytes of padding for alignment.`);
+            }
+            fs.unlinkSync(`./${path.parse(file).name}.o`);
+            fs.unlinkSync(`./${path.parse(file).name}.elf`);
+        }catch(err){
+            return;
+        }
+    });
+    fs.unlinkSync("./entry.ld");
+}
+
+function getAllFolders(dirPath: string, arrayOfFiles: Array<string>) {
+    let files = fs.readdirSync(dirPath);
+
+    arrayOfFiles = arrayOfFiles || [];
+
+    files.forEach((file) => {
+        if (fs.statSync(dirPath + "/" + file).isDirectory()) {
+            arrayOfFiles.push(path.join(dirPath, "/", file));
+            arrayOfFiles = getAllFolders(dirPath + "/" + file, arrayOfFiles);
+        }
+    });
+
+    return arrayOfFiles;
+}
+
+gulp.task('fast64', function(){
     let og = process.cwd();
+    let z64hdr = path.resolve("./z64hdr/include");
+    let entry = path.resolve("./tools/entry.ld");
     process.chdir("./assets");
-    console.log("Building rom...");
-    child_process.execSync("zzrtl.exe oot_build.rtl");
-    console.log("Making patch...");
-    let built_rom: string = "build-yaz.z64";
-    if (id === DEBUG){
-        built_rom = "build.z64";
-    }
-    try {
-        child_process.execSync(`flips.exe --create baserom.z64 ${built_rom} HMCommunity2022.bps`);
-    } catch (err) { }
-    process.chdir(og);
-    try {
-        fs.removeSync("./output");
-        fs.mkdirSync("./output")
-    } catch (err) {
-    }
-    fs.copySync("./assets/HMCommunity2022.bps", "./output/HMCommunity2022.bps");
-    zip.addLocalFolder("./output");
-    zip.writeZip("./output/HMCommunity2022.zip");
-    fs.copySync(`./assets/${built_rom}`, "./output/HMCommunity2022.z64");
-    console.log("Done. Output at ./output/HMCommunity2022.zip");
+    process.chdir("./scene");
+    let folders = getAllFolders(".", []);
+    folders.forEach((dir: string)=>{
+        process.chdir(og);
+        process.chdir("./assets");
+        process.chdir("./scene");
+        process.chdir(dir);
+        compileSceneAndRoom(z64hdr, entry);
+    });
     process.chdir(og);
     return gulp.src('.');
 });
 
-gulp.task("build", gulp.series(['_build']));
+gulp.task('_build', function () {
+    setID();
+    let og = process.cwd();
+    process.chdir("./assets");
+    console.log("Running zzrtl...");
+    child_process.execSync("zzrtl.exe oot_build.rtl");
+    process.chdir(og);
+    return gulp.src('.');
+});
+
+gulp.task('makepatch', function(){
+    setID();
+    let og = process.cwd();
+    process.chdir("./assets");
+    console.log("Making patch...");
+    if (fs.existsSync(`./${PROJECT_NAME}.z64`)){
+        try {
+            child_process.execSync(`flips.exe --create baserom.z64 ${PROJECT_NAME}.z64 ${PROJECT_NAME}.bps`);
+        } catch (err) { }
+    }
+    process.chdir(og);
+    fs.copyFileSync(`./assets/${PROJECT_NAME}.bps`, `./output/${PROJECT_NAME}.bps`);
+    return gulp.src('.');
+});
+
+gulp.task("_dist", function(){
+    setID();
+    let og = process.cwd();
+    process.chdir("./assets");
+    let built_rom: string = "build-yaz.z64";
+    if (id === DEBUG){
+        built_rom = "build.z64";
+    }
+    let buf = fs.readFileSync(`./${built_rom}`);
+    PROJECT_HEADER.copy(buf, 0x20);
+    fs.writeFileSync(`./${PROJECT_NAME}.z64`, buf);
+    process.chdir(og);
+    try {
+        fs.removeSync("./output");
+    } catch (err) {
+    }
+    try {
+        fs.mkdirSync("./output")
+    } catch (err) {
+    }
+    fs.copyFileSync(`./assets/${PROJECT_NAME}.z64`, `./output/${PROJECT_NAME}.z64`);
+    console.log("Done.");
+    return gulp.src('.');
+});
+
+gulp.task("build", gulp.series(['clean', '_build']));
+
+gulp.task("dist", gulp.series(['build', '_dist', 'makepatch']));
+
+gulp.task("_test", function(){
+    let built_rom: string = "build-yaz.z64";
+    if (id === DEBUG){
+        built_rom = "build.z64";
+    }
+    child_process.execSync(path.resolve(`./assets/${built_rom}`));
+});
+
+gulp.task('test', gulp.series(['build', '_test']));
 
 gulp.task("default", gulp.series(['build']));

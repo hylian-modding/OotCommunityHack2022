@@ -1,0 +1,3 @@
+[submodule "z64hdr"]
+	path = z64hdr
+	url = https://github.com/Dragorn421/z64hdr

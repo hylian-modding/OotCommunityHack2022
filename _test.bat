@@ -1,1 +1,1 @@
-yarn test
+call yarn test

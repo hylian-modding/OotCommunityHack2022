@@ -1,2 +1,1 @@
-yarn install
-yarn build
+call yarn build

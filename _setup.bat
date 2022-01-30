@@ -1,2 +1,2 @@
-npm install -g yarn
+call npm install -g yarn
 yarn

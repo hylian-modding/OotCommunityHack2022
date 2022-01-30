@@ -12,23 +12,23 @@ Install Github Desktop from <https://desktop.github.com/> and log in.
 
 **`If you are the *FIRST* person to make a fork for your zone, follow these instructions:`**
 
-3) On Github's website, fork this repository onto your account: <https://github.com/hylian-modding/OotCommunityHack2022>
+1) On Github's website, fork this repository onto your account: <https://github.com/hylian-modding/OotCommunityHack2022>
 
-4) In Github Desktop, go to `File->Clone Repository` and choose your fork of `OotCommunityHack2022` and where to place it. 
+2) In Github Desktop, go to `File->Clone Repository` and choose your fork of `OotCommunityHack2022` and where to place it. 
 
-5) Next, create a new branch titled "zone-`x`" using `Branch->New Branch` where `x` is the zone letter you're working in. 
+3) Next, create a new branch titled "zone-`x`" using `Branch->New Branch` where `x` is the zone letter you're working in. 
 
-6) Give your zone contributers push permissions to the repo by going into the repo's settings on github's website and inviting them as a contributor.
+4) Give your zone contributers push permissions to the repo by going into the repo's settings on github's website and inviting them as a contributor.
 
 **`If someone has *ALREADY* made a fork for your zone, follow these instructions:`**
 
-3) Obtain the link to your zone's fork of the repository (pinned in your zone's channel).
+1) Obtain the link to your zone's fork of the repository (pinned in your zone's channel).
 
-4) In Github Desktop, go to `File->Clone Repository`, click the `URL` tab, and paste the link to your zone's fork and where to place it. 
+2) In Github Desktop, go to `File->Clone Repository`, click the `URL` tab, and paste the link to your zone's fork and where to place it. 
 
-5) Once cloned, change your branch to the zone you are working on via the `Current branch` menu.
+3) Once cloned, change your branch to the zone you are working on via the `Current branch` menu.
 
-6) Ask your zone's host to add you as a contributor to the repository so you can push your work. 
+4) Ask your zone's host to add you as a contributor to the repository so you can push your work. 
 
 
 You should now have your repository cloned on your computer for you to work in. **This is your dev environment.**

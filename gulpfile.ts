@@ -103,6 +103,77 @@ function findAllFiles(dir: string, ext: string){
     return arr;
 }
 
+function getAllFolders(dirPath: string, arrayOfFiles: Array<string>) {
+    let files = fs.readdirSync(dirPath);
+
+    arrayOfFiles = arrayOfFiles || [];
+
+    files.forEach((file) => {
+        if (fs.statSync(dirPath + "/" + file).isDirectory()) {
+            arrayOfFiles.push(path.join(dirPath, "/", file));
+            arrayOfFiles = getAllFolders(dirPath + "/" + file, arrayOfFiles);
+        }
+    });
+
+    return arrayOfFiles;
+}
+
+function compileActor(z64hdr: string, entry: string){
+    let files = findAllFiles(".", ".c");
+    if (files.length > 0){
+        console.log(`Processing actor source found in ${path.parse(process.cwd()).name}`);
+    }else{
+        return;
+    }
+    files.forEach((file: string)=>{
+        console.log(`Compiling ${path.parse(file).base}...`);
+        let p = path.resolve(path.parse(z64hdr).dir, "..");
+        child_process.execSync(`mips64-gcc -fno-zero-initialized-in-bss -std=gnu11 -mtune=vr4300 -march=vr4300 -mabi=32 -mips3 -mno-shared -mdivide-breaks -mno-explicit-relocs -mno-memcpy -mno-check-zero-division -ffreestanding -fno-reorder-blocks -w -I${z64hdr} -I${p} -D_LANGUAGE_C -G 0 -O3 -c ./${path.parse(file).base}`);
+        child_process.execSync(`mips64-ld -L${path.parse(z64hdr).dir} -T ${path.parse(entry).base} --emit-relocs -o ${path.parse(file).name}.elf ${path.parse(file).name}.o`);
+        child_process.execSync(`nOVL -s -c -A 0x80800000 -o ${path.parse(file).name}.zovl ${path.parse(file).name}.elf`);
+        let dump = child_process.execSync(`mips64-objdump -t -C -r -w --special-syms ${path.parse(file).name}.elf`).toString();
+        //console.log(dump);
+        fs.unlinkSync(`./${path.parse(file).name}.o`);
+        fs.unlinkSync(`./${path.parse(file).name}.elf`);
+    });
+}
+
+gulp.task('system', function(){
+    let og = process.cwd();
+    let z64hdr = path.resolve("./z64hdr/include");
+    let entry = path.resolve("./z64hdr/oot_10.ld");
+    process.chdir("./assets");
+    process.chdir("./system");
+    let folders = getAllFolders(".", []);
+    folders.forEach((dir: string)=>{
+        process.chdir(og);
+        process.chdir("./assets");
+        process.chdir("./system");
+        process.chdir(dir);
+        compileActor(z64hdr, entry);
+    });
+    process.chdir(og);
+    return gulp.src('.');
+});
+
+gulp.task('actors', function(){
+    let og = process.cwd();
+    let z64hdr = path.resolve("./z64hdr/include");
+    let entry = path.resolve("./z64hdr/oot_10.ld");
+    process.chdir("./assets");
+    process.chdir("./actor");
+    let folders = getAllFolders(".", []);
+    folders.forEach((dir: string)=>{
+        process.chdir(og);
+        process.chdir("./assets");
+        process.chdir("./actor");
+        process.chdir(dir);
+        compileActor(z64hdr, entry);
+    });
+    process.chdir(og);
+    return gulp.src('.');
+});
+
 function compileSceneAndRoom(z64hdr: string, entry: string){
     fs.copyFileSync(path.resolve(path.parse(entry).dir, "entry_default.ld"), "./entry.ld");
 
@@ -169,21 +240,6 @@ function compileSceneAndRoom(z64hdr: string, entry: string){
         }
     });
     fs.unlinkSync("./entry.ld");
-}
-
-function getAllFolders(dirPath: string, arrayOfFiles: Array<string>) {
-    let files = fs.readdirSync(dirPath);
-
-    arrayOfFiles = arrayOfFiles || [];
-
-    files.forEach((file) => {
-        if (fs.statSync(dirPath + "/" + file).isDirectory()) {
-            arrayOfFiles.push(path.join(dirPath, "/", file));
-            arrayOfFiles = getAllFolders(dirPath + "/" + file, arrayOfFiles);
-        }
-    });
-
-    return arrayOfFiles;
 }
 
 gulp.task('fast64', function(){

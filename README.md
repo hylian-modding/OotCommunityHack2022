@@ -71,7 +71,8 @@ The folder structure is like so:
 		-map0
 ```
 
-The `/code` folder is where all custom code should be developed in. Simply make a folder for your code project and work within that `z64hdr` is the C library of choice for all custom C here. 
+The `/code` folder is where all custom code should be developed in. Simply make a folder for your code project and work within that.
+`z64hdr` is the C library of choice for all custom C here. 
 
 The `/object` folder is where all custom objects will be placed in. Each object will have its own folder, with its data within (blend files, zobjs, etc).
 

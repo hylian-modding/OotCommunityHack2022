@@ -50,7 +50,7 @@ This will build the repository, creating an assets folder for your zzrtl project
 Alternatively, run `_setup.bat`.
 # Developer Ecosystem
 
-## zztrl
+## zzrtl
 The `/assets` folder will be your zzrtl project. Using SharpOcarina or Custom Actor Toolkit and injecting into the project.zzrpl
 will automatically write to the expected folders. [Please read the zzrtl readme for more context on how to use it.](https://github.com/jaredemjohnson/zzrtl-audio/blob/master/README.md)   
 

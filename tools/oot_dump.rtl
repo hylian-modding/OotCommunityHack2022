@@ -6,7 +6,7 @@
 /*USE THE CONFIG.TSV FILE TO SELECT YOUR ROM*/
 /* global variables are initialized before they are set based on each rom, this makes it possible to set debug/1.0 in the config file*/
 	char *g_tsv;
-	int IS_DEBUG; int ACTOR_FOLDER; int VROM_CODE_SIZE; int N_ROGO; int N_ROGO_DMA; int N_ROGO_SIZE;int VANILLA;int TBL_OBJECT;int TBL_OBJECT_ENTRIES;
+	int IS_DEBUG; int ACTOR_FOLDER; int SYSTEM_FOLDER; int PARTICLE_FOLDER; int VROM_CODE_SIZE; int N_ROGO; int N_ROGO_DMA; int N_ROGO_SIZE;int VANILLA;int TBL_OBJECT;int TBL_OBJECT_ENTRIES;
 	int TBL_ACTOR;int TBL_ACTOR_ENTRIES;int TBL_PARTICLE;int TBL_PARTICLE_ENTRIES;int TBL_SCENE;int TBL_SCENE_ENTRIES; int TBL_ROUTE;int TBL_ROUTE_ENTRIES;
 	int TBL_MAP_SELECT;int TBL_MAP_SELECT_ENTRIES;int TBL_AUDIOSAMPLE;int TBL_AUDIOTABLE_FILE;int TBL_AUDIOTABLE_FILE_SIZE;
 	int TBL_AUDIOBANK;int TBL_AUDIOBANK_FILE;int TBL_SEQUENCEINSTRUMENTSET;int TBL_SEQUENCE_FILE;int TBL_AUDIOSEQ;int TBL_ENTRANCECUTSCENE;
@@ -355,6 +355,8 @@ system_overlay(struct rom *rom)
 		/* enter overlay name directory */
 		name = substring(filename, i);
 		dir_enter(name);
+		//dir_enter(SYSTEM_FOLDER);
+		//dir_leave();
 		dir_enter(VANILLA);
 		/* go to table entry (skip first word) */
 		rom.seek(entry[i] + 4);
@@ -1789,6 +1791,8 @@ particle(struct rom *rom)
 	
 	/* enter and parse folder */
 	dir_enter("particle");
+	dir_enter(PARTICLE_FOLDER);
+	dir_leave();
 	dir_enter(VANILLA);
 	
 	/* repeats for every item in the list */
@@ -2004,8 +2008,9 @@ extrasystem(struct rom *rom)
 	int var;
 
 	dir_enter("system");
-
 	dir_enter("code");
+	dir_enter(SYSTEM_FOLDER);
+	dir_leave();
 	dir_enter(VANILLA);
 	rom.extract("code.bin", VROM_CODE, VROM_CODE + VROM_CODE_SIZE);
 	dir_leave();
@@ -2014,6 +2019,8 @@ extrasystem(struct rom *rom)
 
 	/*dumps n_rogo*/
 	dir_enter("ovl_title");
+	dir_enter(SYSTEM_FOLDER);
+	dir_leave();
 	dir_enter(VANILLA);
 	rom.extract("nintendo_rogo_static.zobj", N_ROGO, N_ROGO + N_ROGO_SIZE);
 	dir_leave();
@@ -2058,7 +2065,8 @@ main(int argc, char **argv)
 		name = "baserom.z64";
 		VANILLA = "_vanilla-debug";
 		ACTOR_FOLDER = "_custom-debug";
-
+		SYSTEM_FOLDER = "_custom-debug";
+		PARTICLE_FOLDER = "_custom-debug";
 	}
 	else
 	{
@@ -2067,6 +2075,8 @@ main(int argc, char **argv)
 		name = "baserom.z64";
 		VANILLA = "_vanilla-1.0";
 		ACTOR_FOLDER = "_custom-1.0";
+		SYSTEM_FOLDER = "_custom-1.0";
+		PARTICLE_FOLDER = "_custom-1.0";
 	}
 	
 	/* initialize name lists */

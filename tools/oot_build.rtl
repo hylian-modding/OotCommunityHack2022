@@ -1222,7 +1222,7 @@ audiobank(struct rom *rom)
 	//if(dir_exists("test_system_root")) {printf("in root/system");}
 
 	/*enter audiotable and load the audiotable.tsv*/
-	if(dir_exists("root")) {printf("audio exists");}
+	//if(dir_exists("root")) {printf("audio exists");}
 	dir_enter("audio");
 	dir_enter("audiotable");
 	dir_enter(VANILLA);
@@ -1257,16 +1257,16 @@ audiobank(struct rom *rom)
 		invanilla = 1;
 		if (list3.count() && list3.index() <= index && done == 0)
 		{
-			printf("hi0\n");
+			//printf("hi0\n");
 			invanilla = 0;
 			dir_leave();
 			dir_enter(list3.name());				
 		}
 		else
 		{
-			printf("hi1\n");
+			//printf("hi1\n");
 			dir_enter(list.name());
-			printf("hi2\n");
+			//printf("hi2\n");
 		}
 		/*check if using cached audio*/
 		if (USE_CACHED_AUDIO == 0)
@@ -3125,7 +3125,10 @@ void extrasystem(struct rom *rom)
 			dir_leave(); //go back to /code
 		}
 		else
-		{rom.inject_dma("code.bin", false, DMA_CODE);}
+		{
+			rom.inject_dma("code.bin", false, DMA_CODE);
+			dir_leave();
+		}
 	}
 	else 
 	{
@@ -3134,8 +3137,8 @@ void extrasystem(struct rom *rom)
 		dir_leave(); //go back to /code
 	}
 
-	dir_leave(); //go back to /system
-	//dir_leave();
+	//go back to /system
+	dir_leave();
 	/*injects the nintendo_rogo_static*/
 	dir_enter("ovl_title");
 	if(dir_exists(SYSTEM_FOLDER)) {
@@ -3155,7 +3158,7 @@ void extrasystem(struct rom *rom)
 
 	dir_leave(); // go back to /system
 	dir_leave(); // go back to /root
-	if(dir_exists("system")){ printf("At root ( extraOverlay) ");}
+	//if(dir_exists("system")){ printf("At root ( extraOverlay) ");}
 }
 
 int

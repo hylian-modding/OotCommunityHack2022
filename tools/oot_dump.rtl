@@ -355,8 +355,8 @@ system_overlay(struct rom *rom)
 		/* enter overlay name directory */
 		name = substring(filename, i);
 		dir_enter(name);
-		//dir_enter(SYSTEM_FOLDER);
-		//dir_leave();
+		dir_enter(SYSTEM_FOLDER);
+		dir_leave();
 		dir_enter(VANILLA);
 		/* go to table entry (skip first word) */
 		rom.seek(entry[i] + 4);

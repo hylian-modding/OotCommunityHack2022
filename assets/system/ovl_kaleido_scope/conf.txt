@@ -1,0 +1,3 @@
+init         0x808263C0
+draw         0x80825A00
+vram         0x808137C0

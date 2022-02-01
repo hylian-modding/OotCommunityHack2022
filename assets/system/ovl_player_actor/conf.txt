@@ -1,0 +1,5 @@
+init         0x80844DE8
+dest         0x80848BB4
+main         0x80847FC8
+draw         0x80848680
+vram         0x808301C0

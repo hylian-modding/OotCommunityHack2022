@@ -145,7 +145,7 @@ function compileActor(z64hdr: string, entry: string) {
         child_process.execSync(`mips64-ld -L${path.parse(z64hdr).dir} -T ${path.parse(entry).base} --emit-relocs -o ${path.parse(file).name}.elf ${path.parse(file).name}.o`);
         child_process.execSync(`nOVL -s -c -A 0x80800000 -o ${path.parse(file).name}.zovl ${path.parse(file).name}.elf`);
         let dump = child_process.execSync(`mips64-objdump -S ${path.parse(file).name}.o`).toString();
-        console.log(dump);
+        //console.log(dump);
         fs.unlinkSync(`./${path.parse(file).name}.o`);
         fs.unlinkSync(`./${path.parse(file).name}.elf`);
     });
@@ -155,7 +155,7 @@ export function J_ENCODE(data: number): number {
     return 0x08000000 | ((data >> 2) & 0x3FFFFFF)
 }
 
-export function JNOP(pointer: number){
+export function JNOP(pointer: number) {
     let sb = new SmartBuffer();
     sb.writeUInt32BE(J_ENCODE(pointer));
     sb.writeBuffer(Buffer.from("0000000003E0000800000000", "hex"));
@@ -163,6 +163,40 @@ export function JNOP(pointer: number){
     sb.clear();
     return b;
 };
+
+gulp.task('code', function () {
+    let gen = (input: string, output: string) => {
+        let code = fs.readFileSync(input);
+        let str: string = "";
+        str += "/* This file contains changes to code.bin from zzplayas */\n";
+        str += "#define AUTO_GENERATED_FILE\n";
+        str += `#include "code.h"\n`;
+        str += "\n";
+        str += `#ifdef AUTO_GENERATED_FILE\n`
+        str += "u32 code[] = {\n";
+        for (let i = 0; i < code.byteLength; i += 4) {
+            str += `0x${code.readUInt32BE(i).toString(16).padStart(8, '0').toUpperCase()}, /* 0x${i.toString(16).padStart(8, '0').toUpperCase()} */\n`;
+        }
+        str += "};\n";
+        str += "#endif\n";
+        fs.writeFileSync(output, str);
+    };
+    if (!fs.existsSync("./assets/system/code/code.c")) {
+        gen(`./assets/system/code/_vanilla-1.0/code.bin`, "./assets/system/code/code.c");
+    }
+    let comp = () => {
+        let og = process.cwd();
+        process.chdir("./assets/system/code");
+        child_process.execSync(`mips64-gcc -fno-zero-initialized-in-bss -std=gnu11 -mtune=vr4300 -march=vr4300 -mabi=32 -mips3 -mno-shared -mdivide-breaks -mno-explicit-relocs -mno-memcpy -mno-check-zero-division -ffreestanding -fno-reorder-blocks -w -I./ -D_LANGUAGE_C -G 0 -O0 -c ./code.c`);
+        child_process.execSync(`mips64-ld -L./ -T entry.ld --emit-relocs -o code.elf code.o`);
+        child_process.execSync(`mips64-objcopy -j .data -O binary code.elf code.bin`);
+        fs.unlinkSync("./code.o");
+        fs.unlinkSync("./code.elf");
+        process.chdir(og);
+    };
+    comp();
+    return gulp.src('.');
+});
 
 gulp.task('system', function () {
     console.log("Updating N64 logo entry point. This might take a minute.");
@@ -206,7 +240,6 @@ gulp.task('system', function () {
     let rom = fs.readFileSync("./assets/build.z64");
     index = rom.indexOf(sys);
     let navi = fs.readFileSync("./assets/actor/_custom-1.0/0x18 - Navi & Healing Fairy/actor.zovl");
-    let navi_index = rom.indexOf(navi);
     let params = sys.indexOf(Buffer.from('DEADBEEF', 'hex')) + 0x10;
     for (let i = 0; i < lines.length; i++) {
         if (lines[i].indexOf("OVL_TITLE_DMA_ENTRY") > -1) {
@@ -217,10 +250,6 @@ gulp.task('system', function () {
             lines[i] = `#define OVL_TITLE_RELOC 0x${params.toString(16).toUpperCase()}`;
         } else if (lines[i].indexOf("OVL_TITLE_ALLOC") > -1) {
             lines[i] = `#define OVL_TITLE_ALLOC 0x80400000`;
-        }else if (lines[i].indexOf("OVL_NAVI_BULLSHIT") > -1){
-            lines[i] = `#define OVL_NAVI_BULLSHIT 0x${navi_index.toString(16).toUpperCase()}`;
-        }else if (lines[i].indexOf("OVL_NAVI_ALLOC") > -1){
-            lines[i] = `#define OVL_NAVI_ALLOC 0x${(0x80400000 + sys.byteLength).toString(16)}`;
         }
     }
     fs.writeFileSync("./assets/system/ovl_title/dma_entry.h", lines.join("\n"));
@@ -234,10 +263,11 @@ gulp.task('system', function () {
         if (lines[i].indexOf("System_Init2") > -1) {
             lines[i] = `System_Init2 = 0x${(0x80400000 + (sys.readUInt32BE(index) - 0x80800000)).toString(16)};`;
         } else if (lines[i].indexOf("N64LogoInstance") > -1) {
-            lines[i] = `N64LogoInstance = 0x${(0x80400000 + sys.byteLength + navi.byteLength).toString(16)};`;
+            lines[i] = `N64LogoInstance = 0x${(0x80400000 + sys.byteLength).toString(16)};`;
         } else if (lines[i].indexOf("System_Update2") > -1) {
             lines[i] = `System_Update2 = 0x${(0x80400000 + (sys.readUInt32BE(index2) - 0x80800000)).toString(16)};`;
         } else if (lines[i].indexOf("EnElf_Draw2") > -1) {
+            console.log("Patching navi...");
             let j = (0x80400000 + (sys.readUInt32BE(index3) - 0x80800000));
             JNOP(j).copy(navi, 0x3BFC);
             fs.writeFileSync("./assets/actor/_custom-1.0/0x18 - Navi & Healing Fairy/actor.zovl", navi);

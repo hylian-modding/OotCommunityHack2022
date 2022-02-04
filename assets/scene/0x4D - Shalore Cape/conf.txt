@@ -1,0 +1,3 @@
+unk-a 0
+unk-b 0
+shader 47

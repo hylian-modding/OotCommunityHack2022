@@ -7,7 +7,7 @@
 /*USE THE CONFIG.TSV FILE TO SELECT YOUR ROM*/
 /* global variables are initialized before they are set based on each rom, this makes it possible to set debug/1.0 in the config file*/
 	char *g_tsv;
-	int IS_DEBUG; int ACTOR_FOLDER; int N_ROGO; int N_ROGO_DMA; int N_ROGO_SIZE; int DMA_RAM; int AUDIOBANK_PTR; int AUDIOSEQ_PTR; int AUDIOTABLE_PTR;int VANILLA;
+	int IS_DEBUG; int ACTOR_FOLDER; int SYSTEM_FOLDER; int PARTICLE_FOLDER; int N_ROGO; int N_ROGO_DMA; int N_ROGO_SIZE; int DMA_RAM; int AUDIOBANK_PTR; int AUDIOSEQ_PTR; int AUDIOTABLE_PTR;int VANILLA;
 	int USE_CACHED_AUDIO; int TBL_OBJECT;int TBL_OBJECT_ENTRIES;int TBL_ACTOR;int TBL_ACTOR_ENTRIES;int TBL_PARTICLE;int TBL_PARTICLE_ENTRIES;
 	int TBL_SCENE;int TBL_SCENE_ENTRIES;int TBL_ROUTE;int TBL_ROUTE_ENTRIES;int TBL_MAP_SELECT_FILE;int TBL_MAP_SELECT;int TBL_MAP_SELECT_ENTRIES;
 	int TBL_AUDIOSAMPLE; int TBL_AUDIOBANK;int TBL_AUDIOBANK_FILE;int TBL_AUDIOBANK_SIZE;int TBL_SEQUENCEINSTRUMENTSET;int TBL_SEQUENCE_FILE;
@@ -328,10 +328,18 @@ mapselect(struct rom *rom)
 	/*enter the ovl_select folder*/
 	dir_enter("system");
 	dir_enter("ovl_select");
-
-	/*enters vanilla folder if needed*/
-	if (!file_exists("ovl_select.zovl"))
-	{dir_enter(VANILLA);}
+	if(dir_exists(SYSTEM_FOLDER)) {
+		dir_enter(SYSTEM_FOLDER); //custom
+		/*enters vanilla folder if needed*/
+		if (!file_exists("ovl_select.zovl"))
+		{
+			dir_leave();
+			dir_enter(VANILLA);
+		}
+	}
+	else{
+		dir_enter(VANILLA);
+	}
 	/*load ovl file and create new file*/
 	data = loadfile("ovl_select - copy.bin",&sz, 0);
 	data2 = fopen("ovl_select.zovl","wb");
@@ -571,7 +579,7 @@ system_overlay(struct rom *rom)
 	int   vram_sz;
 	int   ptr;
 	int   i;
-	
+	int   inCustom;
 	/* system overlays aligned 0x10 in retail */
 	rom.align(0x10);
 	
@@ -629,34 +637,82 @@ system_overlay(struct rom *rom)
 	
 	i = 0;
 	arr = Oarr;
+	//if(dir_exists("code")){printf("system root\n");}
 	while (i < 7)
 	{
-		if (!dir_exists(substring(filename, i)))
-			{die(new_string("Missing overlay: ", substring(filename, i),".zovl",0));}
+		dir_enter(substring(filename, i));
+		if(dir_exists(SYSTEM_FOLDER)) {
+			//printf(substring(filename, i));
+			//printf("\nGoing to Custom Folder\n");
+			dir_enter(SYSTEM_FOLDER);
+			if (!file_exists(new_string(substring(filename, i),".zovl",0))) {
+				//printf("Nothing in Custom Folder, leaving \n");
+				dir_leave();
+				if(!dir_exists(VANILLA)) {printf("Vanilla Folder not found!\n");}
+				else {
+					//printf("Entering Vanilla Folder\n");
+					//dir_enter(substring(filename, i));
+					dir_enter(VANILLA);
+				}
+			}
+		}
+		else{ 
+			if(!dir_exists(VANILLA)) {printf("Vanilla Folder not found!\n");}
+			else {
+				
+				//if(dir_exists("test_ovl_title_root")) {printf("test 1\n");}
+				//if(dir_exists("test_system_root")) {printf("test 2\n");}
+				//if(dir_exists("test_ovl_title_vanilla")) {printf("test 3\n");}
+				//if(dir_exists("test_ovl_title_custom")) {printf("test 4\n");}
+				//printf("Entering Vanilla Folder 2\n");
+				//dir_enter(substring(filename, i));
+				dir_enter(VANILLA);
+			}
+		}
+
+		//dir_leave();
+		//if(dir_exists("test_ovl_title_root")) {printf("test 5\n");}
+		//if(dir_exists("test_system_root")) {printf("test 6\n");}
+		//if(dir_exists("test_ovl_title_vanilla")) {printf("test 7\n");}
+		//if(dir_exists("test_ovl_title_custom")) {printf("test 8\n");}
+
+		if (!file_exists(new_string(substring(filename, i),".zovl",0)))
+		{	
+			die(new_string("Missing overlay1: ", substring(filename, i),".zovl",0));
+		}
 
 		/* enter overlay name directory */
-		dir_enter(substring(filename, i));
+		//dir_enter(substring(filename, i));
 		
 		/* go to table entry (skip first word) */
 		rom.seek(entry[i] + 4);
 
 		/*if there is no custom overlay file we go to vanilla folder*/
-		if (!file_exists(new_string(substring(filename, i),".zovl",0)) && dir_exists(VANILLA))
-		{dir_enter(VANILLA);}
-
+		//printf("Hi");
+		//if (!file_exists(new_string(substring(filename, i),".zovl",0))){
+		//	dir_leave();
+		//	dir_leave();
+		//	dir_leave();
+		//	if(dir_exists(VANILLA)) {printf("inVanillaNow\n");}
+		//	dir_enter(VANILLA);
+		//}
 		
 		/* inject file */
 		ovl = rom.inject("*.zovl", compress);
 
 		if (!ovl)
-			{die(new_string("Missing overlay: ", substring(filename, i),".zovl",0));}
+			{die(new_string("Missing overlay2: ", substring(filename, i),".zovl",0));}
 
 		/* get overlay vram size */
 		vram_sz = ovl_vram_sz(ovl, rom.file_sz());
 		
-		/*if there is now custom conf file we go to vanilla folder*/
-		if (!file_exists("conf.txt") && dir_exists(VANILLA))
-		{dir_enter(VANILLA);}
+		/*if there is no custom conf file we go to vanilla folder*/
+		if (!file_exists("conf.txt") && !dir_exists(VANILLA))
+		{	
+			printf("custom conf.txt missing! using vanilla...");
+			dir_leave();
+			dir_enter(VANILLA);
+		}
 
 		/* parse configuration file */
 		conf = conf.new("conf.txt", "list");
@@ -699,7 +755,9 @@ system_overlay(struct rom *rom)
 			rom.write32(conf.get_int("dungeon_mark_data"));
 		
 		if (!dir_exists(VANILLA))
-		{dir_leave();}
+		{
+			dir_leave();
+		}
 		/* advance to next */
 		dir_leave();
 		conf.free();
@@ -1155,14 +1213,16 @@ audiobank(struct rom *rom)
 	int *sfxlist;
 	int drumnumber;
 	int sfxnumber;
-
 	/*allocate memory for name*/
 	name = malloc(256);
 
 	/*set bankpointer for later (this skips first 3 system-related banks*/
 	bankpointer = 0 ;
 
+	//if(dir_exists("test_system_root")) {printf("in root/system");}
+
 	/*enter audiotable and load the audiotable.tsv*/
+	//if(dir_exists("root")) {printf("audio exists");}
 	dir_enter("audio");
 	dir_enter("audiotable");
 	dir_enter(VANILLA);
@@ -1179,14 +1239,13 @@ audiobank(struct rom *rom)
 	/*creates a huge file that will be used for audiobank injection later*/
 	rom.extract("audiobank.bin", 0x0, 0x4000000);
 	buildfile = buildfile.new("audiobank.bin");
-	
+
 	/*set up for cycling through all the banks*/
 	maxbank = list.max();
 	if (list3.max() > maxbank)
 	{maxbank = list3.max();}
 	done = 0;
 	index = 0;
-
 	/*cycle through all the banks*/
 	while (index <= maxbank)   
 	{
@@ -1198,13 +1257,17 @@ audiobank(struct rom *rom)
 		invanilla = 1;
 		if (list3.count() && list3.index() <= index && done == 0)
 		{
+			//printf("hi0\n");
 			invanilla = 0;
 			dir_leave();
 			dir_enter(list3.name());				
 		}
 		else
-		{dir_enter(list.name());}
-		
+		{
+			//printf("hi1\n");
+			dir_enter(list.name());
+			//printf("hi2\n");
+		}
 		/*check if using cached audio*/
 		if (USE_CACHED_AUDIO == 0)
 		{ 
@@ -1682,7 +1745,6 @@ audiobank(struct rom *rom)
 				{rom.write8(0x0);}
 			}
 		}
-
 		/*writes the number of sound effects*/
 		if (file_exists("_soundeffects.tsv"))
 		{rom.write16(sfxnumber);}
@@ -2572,7 +2634,10 @@ object(struct rom *rom)
 	int index;
 	int done;
 
-	
+	if(dir_exists("system")){ 
+		//printf("At root ( object )");
+	}
+
 	/* objects aligned 0x1000 in retail */
 	rom.align(0x1000);
 	
@@ -2851,9 +2916,22 @@ particle(struct rom *rom)
 	rom.align(0x10);
 	
 	/* enter and parse folder */
+	if(dir_exists("particle")) {
+		//printf("particle folder exists\n");
+	}
 	dir_enter("particle");
-	list2 = list2.new(0);
-	done = 0;
+	if(dir_exists(PARTICLE_FOLDER)) {
+		//printf("custom folder exists\n");
+		dir_enter(PARTICLE_FOLDER);
+		list2 = list2.new(0);
+		done = 0;
+		dir_leave();
+	}
+	else{
+		list2 = list2.new(0);
+		done = 0;
+	}
+	
 	dir_enter(VANILLA);
 	list = list.new(0);
 	if (!list.count())
@@ -2870,6 +2948,7 @@ particle(struct rom *rom)
 
 		if (list2.count() && list2.index() <= index && done == 0)
 		{
+			dir_enter(PARTICLE_FOLDER);
 			name = list2.name();
 			if (list2.index() < list2.max())
 			{list2.next();}
@@ -2878,6 +2957,7 @@ particle(struct rom *rom)
 		}
 		else
 		{
+			
 			dir_enter(VANILLA);
 			name = list.name();
 		}
@@ -2968,6 +3048,10 @@ particle(struct rom *rom)
 	list2.free();
 	dir_leave();
 	dir_leave();
+	//dir_leave();
+	//if(dir_exists("_custom-1.0")) { printf("in particle \n");}
+	//if(dir_exists(PARTICLE_FOLDER)) { printf("in particle \n");}
+	//if(dir_exists("system")){ printf("At root ( particle ) ");}
 	printf("success!\n");
 }
 
@@ -3031,34 +3115,50 @@ void extrasystem(struct rom *rom)
 	/*injects the code.bin file*/
 	dir_enter("system");
 	dir_enter("code");
-	if (!file_exists("code.bin"))
+	if(dir_exists(SYSTEM_FOLDER)) {
+		dir_enter(SYSTEM_FOLDER); //goto /code/custom
+		if (!file_exists("code.bin"))
+		{
+			dir_leave(); //go back to /code
+			dir_enter(VANILLA); //goto /code/vanilla
+			rom.inject_dma("code.bin", false, DMA_CODE);
+			dir_leave(); //go back to /code
+		}
+		else
+		{
+			rom.inject_dma("code.bin", false, DMA_CODE);
+			dir_leave();
+		}
+	}
+	else 
 	{
-		dir_enter(VANILLA);
+		dir_enter(VANILLA); //goto /code/vanilla
 		rom.inject_dma("code.bin", false, DMA_CODE);
-		dir_leave();
+		dir_leave(); //go back to /code
 	}
-	else
-	{rom.inject_dma("code.bin", false, DMA_CODE);}
-	if (!dir_exists(VANILLA))
-		{dir_leave();}
-	dir_leave();
-	dir_leave();
 
+	//go back to /system
+	dir_leave();
 	/*injects the nintendo_rogo_static*/
-	dir_enter("system");
 	dir_enter("ovl_title");
-	if (!file_exists("nintendo_rogo_static.zobj"))
-	{
-		dir_enter(VANILLA);
-		rom.inject_dma("nintendo_rogo_static.zobj", false, N_ROGO_DMA);
-		dir_leave();
+	if(dir_exists(SYSTEM_FOLDER)) {
+		dir_enter(SYSTEM_FOLDER); // goto /ovl_title/custom
+		if (!file_exists("nintendo_rogo_static.zobj"))
+		{
+			dir_leave(); // go back to /ovl_title
+			dir_enter(VANILLA); // goto /ovl_title/vanilla
+			rom.inject_dma("nintendo_rogo_static.zobj", false, N_ROGO_DMA);
+			dir_leave(); // go back to /ovl_title
+		}
+		else
+		{rom.inject_dma("nintendo_rogo_static.zobj", false, N_ROGO_DMA);}
 	}
-	else
+	else 
 	{rom.inject_dma("nintendo_rogo_static.zobj", false, N_ROGO_DMA);}
-	if (!dir_exists(VANILLA))
-		{dir_leave();}
-	dir_leave();
-	dir_leave();
+
+	dir_leave(); // go back to /system
+	dir_leave(); // go back to /root
+	//if(dir_exists("system")){ printf("At root ( extraOverlay) ");}
 }
 
 int
@@ -3094,8 +3194,9 @@ main(int argc, char **argv)
 		debugvariables();
 		VANILLA = "_vanilla-debug";
 		ACTOR_FOLDER = "_custom-debug";
+		SYSTEM_FOLDER = "_custom-debug";
+		PARTICLE_FOLDER = "_custom-debug";
 		rpl = rpl.new("project-debug.zzrpl", "list");
-
 	}
 	else
 	{
@@ -3103,6 +3204,8 @@ main(int argc, char **argv)
 		ocarinaoftimevariables();
 		VANILLA = "_vanilla-1.0";
 		ACTOR_FOLDER = "_custom-1.0";
+		SYSTEM_FOLDER = "_custom-1.0";
+		PARTICLE_FOLDER = "_custom-1.0";
 		rpl = rpl.new("project-1.zzrpl", "list");
 	}
 
@@ -3185,7 +3288,9 @@ main(int argc, char **argv)
 			rom.write32(0x8CA56DF8); // Audiotable
 		}
 		audiotable(rom);
+		//printf("test\n");
 		audiobank(rom);	
+		//printf("test2\n");
 		audioseq(rom);
 		audiodma(rom);
 	}
@@ -3285,8 +3390,16 @@ main(int argc, char **argv)
 
 	dir_enter("system");
 	dir_enter("ovl_select");
-	if (!file_exists("ovl_select.zovl"))
-	{dir_enter(VANILLA);}
+	if(dir_exists(SYSTEM_FOLDER)){
+		dir_enter(SYSTEM_FOLDER); //custom
+		if (!file_exists("ovl_select.zovl"))
+		{
+			dir_leave();
+			dir_enter(VANILLA);
+		}
+	}
+	else {dir_enter(VANILLA);}
+
 	rom.seek(TBL_MAP_SELECT_FILE);
 	rom.inject_dma("ovl_select.zovl",compress, DMA_OVL_SELECT);
 	if (!dir_exists(VANILLA))
